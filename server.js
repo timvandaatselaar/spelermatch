@@ -103,12 +103,23 @@ function readBody(req) {
   });
 }
 
+// Alleen afbeeldingen van Wikimedia; alles anders wordt genegeerd.
+const safeImage = (url) => (typeof url === 'string' && url.length < 500 && /^https:\/\/[a-z.]+\.wikimedia\.org\//.test(url) ? url : null);
+
 function cleanPick(pick) {
   if (!pick || typeof pick !== 'object') return null;
   const title = String(pick.title || '').trim().slice(0, 80);
   if (!title) return null;
-  const image = typeof pick.image === 'string' && /^https:\/\/[a-z.]+\.wikimedia\.org\//.test(pick.image) ? pick.image : null;
+  const image = safeImage(pick.image);
+  const country = pick.country && typeof pick.country === 'object'
+    ? { name: String(pick.country.name || '').slice(0, 60), flag: safeImage(pick.country.flag) }
+    : null;
+  const clubs = Array.isArray(pick.clubs)
+    ? pick.clubs.slice(0, 8).map((c) => ({ name: String(c?.name || '').slice(0, 60), logo: safeImage(c?.logo) })).filter((c) => c.name)
+    : [];
   return {
+    country,
+    clubs,
     id: pick.id ? Number(pick.id) || keyOf(title) : keyOf(title),
     title,
     description: String(pick.description || '').slice(0, 120),

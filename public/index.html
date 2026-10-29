@@ -7,101 +7,157 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap">
 <style>
-/* Eén smalle kolom, veel witruimte, alleen zwart-wit met grijstinten. */
+/* Panelen op een neutrale achtergrond, één kolom. Groen is alleen voor status: klaar, voortgang en match. */
 :root {
-  --bg: #ffffff;
-  --fg: #111111;
-  --muted: #8a8a8a;
-  --line: #ececec;
-  --soft: #f5f5f5;
+  --bg: #f4f4f1;
+  --surface: #ffffff;
+  --fg: #141414;
+  --muted: #6e6e69;
+  --line: #e4e4df;
+  --soft: #f0f0ec;
+  --accent: #17694a;
+  --accent-soft: #e4f0e9;
+  --shadow: 0 1px 2px rgba(20, 20, 20, 0.04), 0 6px 20px rgba(20, 20, 20, 0.04);
+  --shadow-hover: 0 2px 4px rgba(20, 20, 20, 0.06), 0 12px 28px rgba(20, 20, 20, 0.08);
+  --halo: none;
   --font: "Geist", -apple-system, "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --bg: #0e0e0e; --fg: #f2f2f2; --muted: #7c7c7c; --line: #232323; --soft: #1a1a1a; color-scheme: dark; }
+  :root:not([data-theme="light"]) {
+    --bg: #0c0d0d; --surface: #161717; --fg: #f1f1ef; --muted: #8d908d; --line: #272928; --soft: #1f2120;
+    --accent: #45b583; --accent-soft: rgba(69, 181, 131, 0.14);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --halo: drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.75)); color-scheme: dark;
+  }
 }
-:root[data-theme="dark"] { --bg: #0e0e0e; --fg: #f2f2f2; --muted: #7c7c7c; --line: #232323; --soft: #1a1a1a; color-scheme: dark; }
+:root[data-theme="dark"] {
+  --bg: #0c0d0d; --surface: #161717; --fg: #f1f1ef; --muted: #8d908d; --line: #272928; --soft: #1f2120;
+  --accent: #45b583; --accent-soft: rgba(69, 181, 131, 0.14);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --halo: drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.75)); color-scheme: dark;
+}
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
   background: var(--bg); color: var(--fg); font: 400 15px/1.5 var(--font);
   -webkit-font-smoothing: antialiased;
-  padding-left: max(20px, env(safe-area-inset-left, 0px));
-  padding-right: max(20px, env(safe-area-inset-right, 0px));
-  padding-block: 0 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 56px;
 }
 img { max-width: 100%; }
 [hidden] { display: none !important; }
 button, input { font: inherit; color: inherit; }
 
-.wrap { max-width: 600px; margin: 0 auto; display: grid; gap: 48px; }
+.wrap { max-width: 720px; margin: 0 auto; display: grid; gap: 16px; }
 
-header.top { display: flex; justify-content: space-between; align-items: baseline; padding-top: 28px; }
-.brand { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
-.round { color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Bovenbalk */
+header.top { display: flex; justify-content: space-between; align-items: center; padding-block: 20px 8px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+.mark { width: 26px; height: 26px; flex: none; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px;
+  font-size: 13px; font-weight: 500; background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.pill.ok { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.pill.plain { background: var(--soft); border-color: transparent; }
 
-.label { font-size: 13px; color: var(--muted); margin: 0 0 14px; font-weight: 400; }
+/* Paneel */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 22px; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+.panel-head h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.panel-head .meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sub { color: var(--muted); margin: -10px 0 18px; font-size: 14px; }
+@media (max-width: 440px) { .panel { padding: 18px; border-radius: 14px; } }
 
+/* Formulieren en knoppen */
 input[type="text"] {
-  width: 100%; height: 48px; padding: 0 16px; border: 1px solid var(--line); border-radius: 10px;
-  background: var(--bg);
+  width: 100%; height: 46px; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 input[type="text"]::placeholder { color: var(--muted); }
-input[type="text"]:focus { outline: none; border-color: var(--fg); }
+input[type="text"]:focus { outline: none; border-color: var(--fg); box-shadow: 0 0 0 3px var(--soft); }
+.search { position: relative; flex: 1; min-width: 0; }
+.search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+.search input { padding-left: 40px; }
 
 .btn {
-  height: 48px; padding: 0 22px; border-radius: 10px; border: 0; cursor: pointer;
-  background: var(--fg); color: var(--bg); font-weight: 500; white-space: nowrap;
+  height: 46px; padding: 0 20px; border-radius: 10px; border: 1px solid transparent; cursor: pointer;
+  background: var(--fg); color: var(--surface); font-weight: 500; white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); transition: opacity 0.15s ease;
 }
-.btn.full { width: 100%; }
-.btn.text { background: none; color: var(--muted); padding: 0; height: auto; font-weight: 400; }
-.btn.text:hover { color: var(--fg); }
+.btn:hover { opacity: 0.88; }
+.btn.secondary { background: var(--surface); color: var(--fg); border-color: var(--line); box-shadow: none; }
+.btn.secondary:hover { opacity: 1; border-color: var(--muted); }
+.btn.large { height: 52px; font-size: 16px; padding: 0 28px; }
+.btn.text { background: none; color: var(--muted); padding: 0; height: auto; font-weight: 400; box-shadow: none; border: 0; }
+.btn.text:hover { color: var(--fg); opacity: 1; }
 .btn:disabled { opacity: 0.4; cursor: default; }
-.btn:focus-visible, .cand:focus-visible, input:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.btn:focus-visible, .cand:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .row { display: flex; gap: 8px; }
 .row > input { flex: 1; min-width: 0; }
 
 /* Inloggen */
-.join { max-width: 360px; margin: 22vh auto 0; display: grid; gap: 20px; }
-.join h1 { font-size: 28px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
-.join p { margin: 0; color: var(--muted); }
+.join { max-width: 400px; margin: 16vh auto 0; }
+.join .brand { margin-bottom: 24px; }
+.join h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 6px; }
+.join p { margin: 0 0 20px; color: var(--muted); }
 
 /* Spelers */
-.players { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; }
-.players li { color: var(--muted); }
-.players li.done { color: var(--fg); }
-.players li small { color: var(--muted); margin-left: 4px; font-size: 13px; }
+.progress { height: 4px; border-radius: 999px; background: var(--soft); overflow: hidden; margin: -6px 0 18px; }
+.progress span { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width 0.3s ease; }
+.players { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.players li { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px 8px 8px; border-radius: 12px; background: var(--soft); }
+.players li.off { opacity: 0.5; }
+.players .who { flex: 1; min-width: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.players .who small { font-weight: 400; color: var(--muted); }
+.avatar {
+  width: 30px; height: 30px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  background: var(--surface); border: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--muted);
+}
+.avatar.sm { width: 22px; height: 22px; font-size: 10px; }
 
 /* Kaarten */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 24px 16px; }
-.sticker { display: grid; gap: 10px; text-align: left; background: none; border: 0; padding: 0; }
-.sticker .photo { aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: var(--soft); display: grid; place-items: center; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.sticker {
+  display: flex; flex-direction: column; text-align: left; padding: 0; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+}
+.sticker .photo { aspect-ratio: 1; background: var(--soft); display: grid; place-items: center; overflow: hidden; }
 .sticker .photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
-.sticker .initials { font-size: 28px; font-weight: 300; color: var(--muted); }
-.sticker .name { font-weight: 500; line-height: 1.3; }
-.sticker .desc { color: var(--muted); font-size: 13px; line-height: 1.35; margin-top: 2px; }
-.cand { cursor: pointer; }
-.cand .photo img { transition: transform 0.25s ease; }
-.cand:hover .photo img { transform: scale(1.03); }
-.owner { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+.sticker .initials { font-size: 26px; font-weight: 300; color: var(--muted); }
+.sticker .meta { padding: 12px 14px 14px; }
+.sticker .name { font-weight: 600; line-height: 1.3; letter-spacing: -0.005em; }
+.sticker .desc { color: var(--muted); font-size: 13px; line-height: 1.35; margin-top: 3px; }
+.cand { cursor: pointer; transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease; }
+.cand:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); border-color: transparent; }
+.owner { display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--line); }
+.results { margin-top: 20px; }
 
-.mine { display: grid; grid-template-columns: 140px 1fr; gap: 24px; align-items: center; }
-.mine-side { display: grid; gap: 8px; justify-items: start; }
-@media (max-width: 440px) { .mine { grid-template-columns: 110px 1fr; gap: 18px; } }
+.badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.badges .flag { height: 12px; width: auto; border-radius: 2px; box-shadow: 0 0 0 1px var(--line); }
+.badges .club { height: 18px; width: 18px; object-fit: contain; filter: var(--halo); }
+
+.mine { display: grid; grid-template-columns: 160px 1fr; gap: 22px; align-items: center; }
+.mine-side { display: grid; gap: 14px; justify-items: start; }
+@media (max-width: 440px) { .mine { grid-template-columns: 120px 1fr; gap: 16px; } }
 
 .status { margin: 0; }
+.status-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .error { color: var(--fg); margin: 12px 0 0; font-size: 14px; }
-.hint { color: var(--muted); margin: 14px 0 0; font-size: 14px; }
-.results { margin-top: 28px; }
+.hint { color: var(--muted); margin: 16px 0 0; font-size: 14px; }
 
-.reveal-cta { display: grid; gap: 12px; }
-.reveal-cta p { margin: 0; color: var(--muted); text-align: center; }
+.reveal-cta { display: grid; justify-items: center; gap: 6px; text-align: center; padding-block: 28px; }
+.reveal-cta h2 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.reveal-cta p { margin: 0 0 14px; color: var(--muted); }
 
-.verdict { margin: 0 0 28px; font-size: 22px; font-weight: 500; letter-spacing: -0.015em; line-height: 1.3; text-wrap: balance; }
-.verdict span { color: var(--muted); font-weight: 400; }
-.actions { margin-top: 32px; }
+.verdict { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 20px; font-size: 18px; font-weight: 500; letter-spacing: -0.01em; }
+.verdict span.rest { color: var(--muted); font-weight: 400; font-size: 15px; }
+.actions { margin-top: 20px; display: flex; justify-content: flex-end; }
 
 /* Aftellen */
 .countdown { position: fixed; inset: 0; background: var(--bg); display: grid; place-items: center; z-index: 20; }
@@ -110,45 +166,58 @@ input[type="text"]:focus { outline: none; border-color: var(--fg); }
 
 /* Eerdere rondes */
 .history { display: grid; }
-.hround { display: grid; grid-template-columns: 72px 1fr; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
-.hround .lbl { color: var(--muted); font-size: 13px; padding-top: 4px; font-variant-numeric: tabular-nums; }
+.hround { display: grid; grid-template-columns: 96px 1fr; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+.hround:first-child { border-top: 0; padding-top: 0; }
+.hround .lbl { display: grid; gap: 6px; justify-items: start; color: var(--muted); font-size: 13px; padding-top: 3px; font-variant-numeric: tabular-nums; }
 .hpicks { display: grid; gap: 8px; min-width: 0; }
 .hpick { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .hpick img, .hpick .ph { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: var(--soft); flex: none; }
 .hpick small { color: var(--muted); }
 
-footer { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; padding-top: 20px; border-top: 1px solid var(--line); }
+footer { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; padding: 8px 4px 0; }
 footer a { color: inherit; }
 
-@media (prefers-reduced-motion: reduce) { .countdown span { animation: none; } .cand .photo img { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .countdown span { animation: none; } .cand, .progress span, input, .btn { transition: none; } }
 </style>
 </head>
 <body>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="0 0 26 26"><rect width="26" height="26" rx="7" style="fill:var(--fg)"/><circle cx="10.5" cy="13" r="5" fill="none" stroke-width="1.8" style="stroke:var(--surface)"/><circle cx="15.5" cy="13" r="5" fill="none" stroke-width="1.8" style="stroke:var(--accent)"/></symbol>
+</svg>
+
 <section class="join" id="joinView">
-  <h1>Spelermatch</h1>
-  <p>Kies tegelijk een voetballer en probeer samen op dezelfde uit te komen.</p>
-  <form id="joinForm" class="row">
-    <input type="text" id="nameInput" placeholder="Je naam" maxlength="24" autocomplete="nickname" required>
-    <button class="btn" type="submit">Meedoen</button>
-  </form>
+  <p class="brand"><svg class="mark"><use href="#mark"/></svg>Spelermatch</p>
+  <div class="panel">
+    <h1>Meedoen</h1>
+    <p>Kies tegelijk een voetballer en probeer samen op dezelfde uit te komen.</p>
+    <form id="joinForm" class="row">
+      <input type="text" id="nameInput" placeholder="Je naam" maxlength="24" autocomplete="nickname" required>
+      <button class="btn" type="submit">Start</button>
+    </form>
+  </div>
 </section>
 
 <main class="wrap" id="gameView" hidden>
   <header class="top">
-    <p class="brand">Spelermatch</p>
-    <span class="round" id="roundLabel">Ronde 1</span>
+    <p class="brand"><svg class="mark"><use href="#mark"/></svg>Spelermatch</p>
+    <span class="pill" id="roundLabel">Ronde 1</span>
   </header>
 
-  <section>
-    <p class="label">Spelers</p>
+  <section class="panel">
+    <div class="panel-head"><h2>Spelers</h2><span class="meta" id="playerMeta"></span></div>
+    <div class="progress" id="progressWrap"><span id="progressBar" style="width:0"></span></div>
     <ul class="players" id="playerList"></ul>
   </section>
 
-  <section id="pickSection">
-    <p class="label">Kies een speler</p>
+  <section class="panel" id="pickSection">
+    <div class="panel-head"><h2>Kies je speler</h2></div>
+    <p class="sub">De anderen zien je keuze pas bij het tonen.</p>
     <form id="searchForm" class="row">
-      <input type="text" id="searchInput" placeholder="Bijvoorbeeld Henry" maxlength="60" autocomplete="off">
+      <div class="search">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5" stroke-linecap="round"/></svg>
+        <input type="text" id="searchInput" placeholder="Bijvoorbeeld Henry" maxlength="60" autocomplete="off">
+      </div>
       <button class="btn" type="submit" id="searchBtn">Zoek</button>
     </form>
     <p class="error" id="searchError" hidden></p>
@@ -158,39 +227,40 @@ footer a { color: inherit; }
     </p>
   </section>
 
-  <section id="mySection" hidden>
-    <p class="label">Jouw keuze</p>
+  <section class="panel" id="mySection" hidden>
+    <div class="panel-head"><h2>Jouw keuze</h2></div>
     <div class="mine">
       <div id="myCard"></div>
       <div class="mine-side">
         <p class="status" id="waitStatus"></p>
-        <button class="btn text" type="button" id="changeBtn">Wijzigen</button>
+        <button class="btn secondary" type="button" id="changeBtn">Wijzigen</button>
       </div>
     </div>
   </section>
 
-  <section id="revealCta" class="reveal-cta" hidden>
-    <button class="btn full" type="button" id="revealBtn">Aftellen en tonen</button>
-    <p>Iedereen heeft gekozen</p>
+  <section class="panel reveal-cta" id="revealCta" hidden>
+    <h2>Iedereen heeft gekozen</h2>
+    <p>Tel samen af en bekijk alle keuzes tegelijk.</p>
+    <button class="btn large" type="button" id="revealBtn">Aftellen en tonen</button>
   </section>
 
-  <section id="revealSection" hidden>
-    <p class="label" id="revealTitle">Ronde 1</p>
+  <section class="panel" id="revealSection" hidden>
+    <div class="panel-head"><h2 id="revealTitle">Uitslag</h2></div>
     <p class="verdict" id="matchBanner" hidden></p>
-    <p class="verdict" id="noMatch" hidden>Geen match. <span>Zoek het verband en kies opnieuw.</span></p>
+    <p class="verdict" id="noMatch" hidden><span class="pill plain">Geen match</span><span class="rest">Zoek het verband en kies opnieuw.</span></p>
     <div id="revealGrid" class="grid"></div>
     <div class="actions">
       <button class="btn" type="button" id="nextBtn">Volgende ronde</button>
     </div>
   </section>
 
-  <section id="historySection" hidden>
-    <p class="label">Eerdere rondes</p>
+  <section class="panel" id="historySection" hidden>
+    <div class="panel-head"><h2>Eerdere rondes</h2></div>
     <div class="history" id="historyList"></div>
   </section>
 
   <footer>
-    <span><span id="meName"></span> · <a href="#" id="logoutLink">andere naam</a></span>
+    <span>Ingelogd als <span id="meName"></span> · <a href="#" id="logoutLink">andere naam</a></span>
     <button class="btn text" type="button" id="resetBtn">Nieuw spel</button>
   </footer>
 </main>
@@ -210,7 +280,15 @@ const initials = (t) => esc(String(t).replace(/\(.*?\)/g, '').split(/\s+/).filte
 
 function sticker(p, extra = '') {
   const photo = p.image ? `<img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy" referrerpolicy="no-referrer">` : `<span class="initials">${initials(p.title)}</span>`;
-  return `<div class="photo">${photo}</div><div><div class="name">${esc(p.title)}</div><div class="desc">${esc(p.description || '')}</div></div>${extra}`;
+  return `<div class="photo">${photo}</div><div class="meta"><div class="name">${esc(p.title)}</div><div class="desc">${esc(p.description || '')}</div>${extra}</div>`;
+}
+
+// Vlag en clublogo's, klein onder de naam
+function badges(p) {
+  const flag = p.country?.flag ? `<img class="flag" src="${esc(p.country.flag)}" alt="${esc(p.country.name)}" title="${esc(p.country.name)}" referrerpolicy="no-referrer">` : '';
+  const clubs = (p.clubs || []).filter((c) => c.logo)
+    .map((c) => `<img class="club" src="${esc(c.logo)}" alt="${esc(c.name)}" title="${esc(c.name)}" referrerpolicy="no-referrer">`).join('');
+  return flag || clubs ? `<div class="badges">${flag}${clubs}</div>` : '';
 }
 
 async function post(action, body = {}) {
@@ -279,6 +357,60 @@ async function searchPlayers(q) {
   return results;
 }
 
+// Land en clubs van een speler: Wikidata voor de feiten, Wikipedia voor de clublogo's.
+async function apiGet(base, params) {
+  const res = await fetch(base + '?' + new URLSearchParams({ format: 'json', origin: '*', ...params }));
+  if (!res.ok) throw new Error('details ' + res.status);
+  return res.json();
+}
+
+const claimId = (c) => c.mainsnak?.datavalue?.value?.id;
+const hasEnd = (c) => !!c.qualifiers?.P582;
+
+async function fetchDetails(pageid) {
+  const wp = await apiGet('https://en.wikipedia.org/w/api.php', { action: 'query', pageids: pageid, prop: 'pageprops', ppprop: 'wikibase_item', formatversion: '2' });
+  const qid = wp.query?.pages?.[0]?.pageprops?.wikibase_item;
+  if (!qid) return {};
+  const claims = (await apiGet('https://www.wikidata.org/w/api.php', { action: 'wbgetentities', ids: qid, props: 'claims' })).entities[qid].claims;
+
+  const countryId = claimId((claims.P1532 || claims.P27 || [])[0] || {});
+  const clubIds = [...new Set((claims.P54 || [])
+    .map((c) => ({ id: claimId(c), start: c.qualifiers?.P580?.[0]?.datavalue?.value?.time || '+9999' }))
+    .filter((c) => c.id)
+    .sort((a, b) => a.start.localeCompare(b.start))
+    .map((c) => c.id))];
+
+  const ids = [countryId, ...clubIds].filter(Boolean).slice(0, 50);
+  if (!ids.length) return {};
+  const ents = (await apiGet('https://www.wikidata.org/w/api.php', { action: 'wbgetentities', ids: ids.join('|'), props: 'claims|labels|sitelinks', languages: 'en', sitefilter: 'enwiki' })).entities;
+  const label = (id) => ents[id]?.labels?.en?.value || '';
+
+  let country = null;
+  if (countryId && ents[countryId]) {
+    const flags = ents[countryId].claims.P41 || [];
+    const flag = flags.find((c) => c.rank === 'preferred') || flags.find((c) => !hasEnd(c)) || flags[0];
+    const file = flag?.mainsnak?.datavalue?.value;
+    country = { name: label(countryId), flag: file ? `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=48` : null };
+  }
+
+  // Alleen seniorenclubs: geen nationale elftallen, jeugd- of reserveteams.
+  const clubs = clubIds
+    .map((id) => ({ id, name: label(id), wiki: ents[id]?.sitelinks?.enwiki?.title }))
+    .filter((c) => c.name && !/national|under-\d|\bU\d{2}\b|reserves|youth|academy|\bB$|\bII$/i.test(c.name))
+    .slice(0, 8);
+
+  const titles = clubs.map((c) => c.wiki).filter(Boolean);
+  const logos = {};
+  if (titles.length) {
+    const img = await apiGet('https://en.wikipedia.org/w/api.php', { action: 'query', titles: titles.join('|'), prop: 'pageimages', piprop: 'thumbnail', pithumbsize: '64', pilicense: 'any', formatversion: '2' });
+    for (const p of img.query?.pages || []) if (p.thumbnail) logos[p.title] = p.thumbnail.source;
+  }
+
+  return { country, clubs: clubs.map((c) => ({ name: c.name, logo: logos[c.wiki] || null })) };
+}
+
+const withTimeout = (promise, ms) => Promise.race([promise, new Promise((resolve) => setTimeout(() => resolve({}), ms))]);
+
 let candidates = [];
 $('searchForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -311,7 +443,13 @@ $('candidates').addEventListener('click', (e) => {
 $('noPhotoBtn').addEventListener('click', () => choose({ title: lastQuery, description: 'Zonder foto', image: null }));
 
 async function choose(pick) {
-  const res = await post('pick', { pick });
+  $('candidates').style.opacity = '0.4';
+  $('candidates').style.pointerEvents = 'none';
+  let details = {};
+  try { if (typeof pick.id === 'number') details = await withTimeout(fetchDetails(pick.id), 5000); } catch {}
+  $('candidates').style.opacity = '';
+  $('candidates').style.pointerEvents = '';
+  const res = await post('pick', { pick: { ...pick, ...details } });
   if (res.error) { $('searchError').textContent = res.error; $('searchError').hidden = false; return; }
   $('candidates').innerHTML = '';
   $('searchInput').value = '';
@@ -340,10 +478,16 @@ function render() {
   const s = state;
   $('roundLabel').textContent = 'Ronde ' + s.round;
 
+  const active = s.players.filter((p) => p.online);
+  const ready = active.filter((p) => p.submitted).length;
+  const collectingNow = s.phase === 'collect';
+  $('playerMeta').textContent = collectingNow ? `${ready} van ${active.length} klaar` : `${s.players.length} spelers`;
+  $('progressWrap').hidden = !collectingNow;
+  $('progressBar').style.width = active.length ? (ready / active.length) * 100 + '%' : '0';
   $('playerList').innerHTML = s.players.map((p) => {
-    const done = s.phase !== 'collect' || p.submitted;
-    const status = !p.online ? 'weg' : s.phase === 'collect' ? (p.submitted ? 'klaar' : 'kiest') : '';
-    return `<li class="${done ? 'done' : ''}">${esc(p.name)}${p.you ? ' (jij)' : ''}${status ? `<small>${status}</small>` : ''}</li>`;
+    const status = !p.online ? '<span class="pill plain">Weg</span>'
+      : collectingNow ? (p.submitted ? '<span class="pill ok">Klaar</span>' : '<span class="pill plain">Kiest</span>') : '';
+    return `<li class="${p.online ? '' : 'off'}"><span class="avatar">${initials(p.name)}</span><span class="who">${esc(p.name)}${p.you ? ' <small>jij</small>' : ''}</span>${status}</li>`;
   }).join('');
 
   const collecting = s.phase === 'collect';
@@ -373,10 +517,10 @@ function render() {
   // Onthulling
   $('revealSection').hidden = s.phase !== 'reveal';
   if (s.phase === 'reveal') {
-    $('revealTitle').textContent = 'Ronde ' + s.round;
-    $('revealGrid').innerHTML = s.reveal.map((p) => `<div><div class="owner">${esc(p.player)}</div><div class="sticker">${sticker(p)}</div></div>`).join('');
+    $('revealTitle').textContent = 'Uitslag ronde ' + s.round;
+    $('revealGrid').innerHTML = s.reveal.map((p) => `<div class="sticker"><div class="owner"><span class="avatar sm">${initials(p.player)}</span>${esc(p.player)}</div>${sticker(p, badges(p))}</div>`).join('');
     $('matchBanner').hidden = !s.match;
-    $('matchBanner').innerHTML = s.match ? `Match. <span>Iedereen koos ${esc(s.reveal[0].title)}.</span>` : '';
+    $('matchBanner').innerHTML = s.match ? `<span class="pill ok">Match</span>Iedereen koos ${esc(s.reveal[0].title)}` : '';
     $('noMatch').hidden = s.match;
     $('nextBtn').textContent = s.match ? 'Opnieuw beginnen' : 'Volgende ronde';
   }
@@ -386,7 +530,7 @@ function render() {
   $('historySection').hidden = past.length === 0;
   $('historyList').innerHTML = past.slice().reverse().map((h) => `
     <div class="hround">
-      <span class="lbl">Ronde ${h.round}${h.match ? ' · match' : ''}</span>
+      <span class="lbl">Ronde ${h.round}${h.match ? '<span class="pill ok">Match</span>' : ''}</span>
       <div class="hpicks">${h.picks.map((p) => `<span class="hpick">${p.image ? `<img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">` : '<span class="ph"></span>'}<span>${esc(p.title)} <small>${esc(p.player)}</small></span></span>`).join('')}</div>
     </div>`).join('');
 }
