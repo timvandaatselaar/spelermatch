@@ -264,6 +264,41 @@ $('logoutLink').addEventListener('click', (e) => {
 });
 
 // --- Zoeken en kiezen ---
+// De browser zoekt zelf op Wikipedia: een gedeelde server-IP wordt door Wikipedia snel geblokkeerd.
+const searchCache = new Map();
+
+async function wikiSearch(search, sortByLinks) {
+  const params = new URLSearchParams({
+    action: 'query', generator: 'search', gsrsearch: search, gsrlimit: '8',
+    prop: 'pageimages|description', piprop: 'thumbnail', pithumbsize: '500',
+    format: 'json', formatversion: '2', origin: '*',
+  });
+  if (sortByLinks) params.set('gsrsort', 'incoming_links_desc');
+  const res = await fetch('https://en.wikipedia.org/w/api.php?' + params);
+  if (res.status === 429) throw new Error('Wikipedia is even druk. Probeer het over een halve minuut opnieuw.');
+  if (!res.ok) throw new Error('Zoeken lukte niet. Probeer het opnieuw.');
+  const json = await res.json();
+  return (json.query?.pages || [])
+    .sort((a, b) => a.index - b.index)
+    .map((p) => ({ id: p.pageid, title: p.title.replace(/ \((footballer|soccer)[^)]*\)$/, ''), description: p.description || '', image: p.thumbnail?.source || null }));
+}
+
+async function searchPlayers(q) {
+  const cacheKey = q.toLowerCase();
+  if (searchCache.has(cacheKey)) return searchCache.get(cacheKey);
+  const infobox = 'hastemplate:"Infobox football biography"';
+  const quoted = q.replace(/"/g, '');
+  // Eerst op naam in de titel, gesorteerd op bekendheid (aantal links), daarna breder zoeken.
+  let results = await wikiSearch(`intitle:"${quoted}" ${infobox}`, true);
+  if (results.length < 3) {
+    const more = await wikiSearch(`${quoted} ${infobox}`, false);
+    for (const r of more) if (!results.some((x) => x.id === r.id)) results.push(r);
+  }
+  results = results.filter((r) => r.image).concat(results.filter((r) => !r.image)).slice(0, 8);
+  searchCache.set(cacheKey, results);
+  return results;
+}
+
 let candidates = [];
 $('searchForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -274,10 +309,7 @@ $('searchForm').addEventListener('submit', async (e) => {
   $('searchError').hidden = true;
   $('candidates').innerHTML = '<p class="hint">Foto\'s zoeken...</p>';
   try {
-    const res = await fetch('/api/search?q=' + encodeURIComponent(q));
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Zoeken lukte niet.');
-    candidates = data.results;
+    candidates = await searchPlayers(q);
     $('candidates').innerHTML = candidates.length
       ? candidates.map((c, i) => `<button type="button" class="sticker cand" data-i="${i}">${sticker(c)}</button>`).join('')
       : '<p class="hint">Geen voetballer gevonden met deze naam.</p>';

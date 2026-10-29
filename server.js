@@ -1,5 +1,5 @@
 // Spelermatch: iedereen kiest tegelijk een voetballer, daarna wordt alles tegelijk onthuld.
-// Geen dependencies: alleen Node 18+ (http, fetch). Start met `node server.js`.
+// Geen dependencies: alleen Node 18+. Foto's zoekt de browser zelf op Wikipedia. Start met `node server.js`.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -7,7 +7,6 @@ const path = require('path');
 const PORT = process.env.PORT || 3000;
 const COUNTDOWN_MS = 3000;
 const OFFLINE_GRACE_MS = 60_000;
-const UA = 'SpelerMatch/1.0 (private party game; contact via repository owner)';
 const INDEX_HTML = fs.readFileSync(path.join(__dirname, 'public', 'index.html'));
 
 // --- Spelstatus ---------------------------------------------------------------
@@ -89,42 +88,6 @@ setInterval(() => {
   if (changed) broadcast();
 }, 10_000);
 
-// --- Foto's zoeken via Wikipedia ----------------------------------------------
-
-const searchCache = new Map();
-
-async function wikiSearch(search, sortByLinks) {
-  const params = new URLSearchParams({
-    action: 'query', generator: 'search', gsrsearch: search, gsrlimit: '8',
-    prop: 'pageimages|description', piprop: 'thumbnail', pithumbsize: '500',
-    format: 'json', formatversion: '2',
-  });
-  if (sortByLinks) params.set('gsrsort', 'incoming_links_desc');
-  const res = await fetch(`https://en.wikipedia.org/w/api.php?${params}`, { headers: { 'User-Agent': UA } });
-  if (res.status === 429) throw Object.assign(new Error('rate_limited'), { status: 429 });
-  if (!res.ok) throw new Error(`Wikipedia ${res.status}`);
-  const json = await res.json();
-  return (json.query?.pages || [])
-    .sort((a, b) => a.index - b.index)
-    .map((p) => ({ id: p.pageid, title: p.title.replace(/ \((footballer|soccer)[^)]*\)$/, ''), description: p.description || '', image: p.thumbnail?.source || null }));
-}
-
-async function searchPlayers(q) {
-  const cacheKey = q.toLowerCase();
-  if (searchCache.has(cacheKey)) return searchCache.get(cacheKey);
-  const infobox = 'hastemplate:"Infobox football biography"';
-  const quoted = q.replace(/"/g, '');
-  // Eerst op naam in de titel, gesorteerd op bekendheid (aantal links), daarna breder zoeken.
-  let results = await wikiSearch(`intitle:"${quoted}" ${infobox}`, true);
-  if (results.length < 3) {
-    const more = await wikiSearch(`${quoted} ${infobox}`, false);
-    for (const r of more) if (!results.some((x) => x.id === r.id)) results.push(r);
-  }
-  results = results.filter((r) => r.image).concat(results.filter((r) => !r.image)).slice(0, 8);
-  searchCache.set(cacheKey, results);
-  return results;
-}
-
 // --- HTTP ---------------------------------------------------------------------
 
 function sendJson(res, status, body) {
@@ -177,17 +140,6 @@ const server = http.createServer(async (req, res) => {
       broadcast();
     });
     return broadcast();
-  }
-
-  if (req.method === 'GET' && url.pathname === '/api/search') {
-    const q = String(url.searchParams.get('q') || '').trim().slice(0, 60);
-    if (q.length < 2) return sendJson(res, 400, { error: 'Typ minstens twee letters.' });
-    try {
-      return sendJson(res, 200, { results: await searchPlayers(q) });
-    } catch (err) {
-      const msg = err.status === 429 ? 'Wikipedia is even druk. Probeer het over een halve minuut opnieuw.' : 'Zoeken lukte niet. Probeer het opnieuw.';
-      return sendJson(res, 502, { error: msg });
-    }
   }
 
   if (req.method === 'POST' && url.pathname.startsWith('/api/')) {
