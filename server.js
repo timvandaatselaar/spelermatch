@@ -106,6 +106,8 @@ function readBody(req) {
 // Alleen afbeeldingen van Wikimedia; alles anders wordt genegeerd.
 const safeImage = (url) => (typeof url === 'string' && url.length < 500 && /^https:\/\/[a-z.]+\.wikimedia\.org\//.test(url) ? url : null);
 
+const samePlayer = (a, b) => a.id === b.id || keyOf(a.title) === keyOf(b.title);
+
 function cleanPick(pick) {
   if (!pick || typeof pick !== 'object') return null;
   const title = String(pick.title || '').trim().slice(0, 80);
@@ -163,6 +165,9 @@ const server = http.createServer(async (req, res) => {
       if (game.phase !== 'collect') return sendJson(res, 409, { error: 'De ronde is al onthuld.' });
       const pick = cleanPick(body.pick);
       if (!pick) return sendJson(res, 400, { error: 'Kies eerst een speler.' });
+      // Een speler mag per spel maar één keer genoemd worden (in dezelfde ronde mag het wel: dat is de match).
+      const earlier = game.history.find((h) => h.picks.some((p) => samePlayer(p, pick)));
+      if (earlier) return sendJson(res, 409, { error: `${pick.title} is al genoemd in ronde ${earlier.round}. Kies een andere speler.` });
       game.picks[key] = pick;
     } else if (action === 'unpick') {
       if (game.phase === 'collect') delete game.picks[key];

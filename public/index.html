@@ -135,6 +135,10 @@ input[type="text"]:focus { outline: none; border-color: var(--fg); box-shadow: 0
 .sticker .desc { color: var(--muted); font-size: 13px; line-height: 1.35; margin-top: 3px; }
 .cand { cursor: pointer; transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease; }
 .cand:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); border-color: transparent; }
+.cand.used { cursor: not-allowed; }
+.cand.used .photo, .cand.used .name, .cand.used .desc { opacity: 0.4; }
+.cand.used:hover { box-shadow: none; transform: none; border-color: var(--line); }
+.used-note { margin-top: 10px; font-size: 12px; font-weight: 500; color: var(--muted); }
 .owner { display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--line); }
 .results { margin-top: 20px; }
 
@@ -423,7 +427,12 @@ $('searchForm').addEventListener('submit', async (e) => {
   try {
     candidates = await searchPlayers(q);
     $('candidates').innerHTML = candidates.length
-      ? candidates.map((c, i) => `<button type="button" class="sticker cand" data-i="${i}">${sticker(c)}</button>`).join('')
+      ? candidates.map((c, i) => {
+          const round = usedInRound(c);
+          return round
+            ? `<button type="button" class="sticker cand used" data-i="${i}" aria-disabled="true">${sticker(c, `<div class="used-note">Al genoemd in ronde ${round}</div>`)}</button>`
+            : `<button type="button" class="sticker cand" data-i="${i}">${sticker(c)}</button>`;
+        }).join('')
       : '<p class="hint">Geen voetballer gevonden met deze naam.</p>';
   } catch (err) {
     $('candidates').innerHTML = '';
@@ -442,7 +451,20 @@ $('candidates').addEventListener('click', (e) => {
 });
 $('noPhotoBtn').addEventListener('click', () => choose({ title: lastQuery, description: 'Zonder foto', image: null }));
 
+// Ronde waarin deze speler al eens genoemd is in dit spel, of null
+function usedInRound(pick) {
+  const key = (t) => String(t || '').trim().toLowerCase();
+  const h = (state?.history || []).find((r) => r.picks.some((p) => p.id === pick.id || key(p.title) === key(pick.title)));
+  return h ? h.round : null;
+}
+
 async function choose(pick) {
+  const round = usedInRound(pick);
+  if (round) {
+    $('searchError').textContent = `${pick.title} is al genoemd in ronde ${round}. Kies een andere speler.`;
+    $('searchError').hidden = false;
+    return;
+  }
   $('candidates').style.opacity = '0.4';
   $('candidates').style.pointerEvents = 'none';
   let details = {};
