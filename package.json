@@ -1,0 +1,13 @@
+{
+  "name": "spelermatch",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Iedereen kiest tegelijk een voetballer; probeer samen op dezelfde speler uit te komen.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

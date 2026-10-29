@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spelermatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: één kolom als een stickeralbum; kaarten zijn plaatjes met naamstrook. */
+:root {
+  --paper: #eceee4;
+  --page: #f7f8f2;
+  --ink: #15233b;
+  --muted: #5d6676;
+  --line: #d3d7c8;
+  --grass: #1d6a47;
+  --grass-ink: #ffffff;
+  --gold: #f0c02e;
+  --gold-ink: #15233b;
+  --danger: #b4322c;
+  --font-display: "Oswald", "Arial Narrow", Impact, sans-serif;
+  --font-body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #10161f; --page: #18202c; --ink: #e9ecef; --muted: #9aa4b2; --line: #2a3443;
+    --grass: #2f9165; --gold: #f2c840; --danger: #e0645d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #10161f; --page: #18202c; --ink: #e9ecef; --muted: #9aa4b2; --line: #2a3443;
+  --grass: #2f9165; --gold: #f2c840; --danger: #e0645d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper); color: var(--ink); font: 16px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+}
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+.wrap { max-width: 920px; margin: 0 auto; display: grid; gap: 28px; }
+
+header.top {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding-block: 20px 12px; border-bottom: 3px solid var(--ink);
+}
+.brand { font: 700 2rem/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; margin: 0; }
+.brand span { color: var(--grass); }
+.round { font: 500 1rem var(--font-display); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+h2 { font: 700 1.25rem/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 12px; text-wrap: balance; }
+.hint { color: var(--muted); margin: 0 0 14px; max-width: 62ch; }
+
+button, input { font: inherit; }
+input[type="text"] {
+  width: 100%; padding: 12px 14px; border: 2px solid var(--line); border-radius: 6px;
+  background: var(--page); color: var(--ink);
+}
+input[type="text"]:focus { outline: none; border-color: var(--grass); }
+.btn {
+  border: 0; border-radius: 6px; padding: 12px 18px; cursor: pointer;
+  font: 600 1rem var(--font-body); background: var(--ink); color: var(--paper);
+}
+.btn.primary { background: var(--grass); color: var(--grass-ink); }
+.btn.gold { background: var(--gold); color: var(--gold-ink); font: 700 1.3rem var(--font-display); text-transform: uppercase; letter-spacing: 0.05em; padding: 16px 28px; }
+.btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.btn:focus-visible, .cand:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row > input { flex: 1 1 220px; min-width: 0; }
+
+/* Inloggen */
+.join { max-width: 420px; margin: 12vh auto 0; display: grid; gap: 16px; }
+.join p { margin: 0; color: var(--muted); }
+
+/* Spelers */
+.players { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+  background: var(--page); border: 1px solid var(--line); font-weight: 600;
+}
+.chip .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.chip.done .dot { background: var(--grass); }
+.chip.off { opacity: 0.55; }
+.chip small { font-weight: 400; color: var(--muted); }
+
+/* Stickers */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.sticker {
+  background: var(--page); border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+  display: flex; flex-direction: column; text-align: left; padding: 0; color: var(--ink);
+}
+.sticker .photo { aspect-ratio: 4 / 5; background: var(--line); display: grid; place-items: center; overflow: hidden; }
+.sticker .photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
+.sticker .photo .initials { font: 700 2.6rem var(--font-display); color: var(--muted); }
+.sticker .name { background: var(--ink); color: var(--paper); font: 700 1rem/1.15 var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; padding: 8px 10px; }
+.sticker .desc { font-size: 0.82rem; color: var(--muted); padding: 6px 10px 10px; line-height: 1.3; min-height: 2.6em; }
+.cand { cursor: pointer; transition: transform 0.12s ease, border-color 0.12s ease; }
+.cand:hover { transform: translateY(-3px); border-color: var(--grass); }
+.owner { font: 600 0.8rem var(--font-body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
+
+.mine { display: grid; grid-template-columns: 170px 1fr; gap: 18px; align-items: center; }
+@media (max-width: 480px) { .mine { grid-template-columns: 1fr; } .mine .sticker { max-width: 220px; } }
+
+.status { font: 500 1.05rem var(--font-body); margin: 0; }
+.error { color: var(--danger); margin: 8px 0 0; }
+
+.reveal-cta { display: grid; justify-items: center; gap: 10px; padding: 20px; border: 2px dashed var(--grass); border-radius: 10px; text-align: center; }
+
+.match {
+  background: var(--grass); color: var(--grass-ink); border-radius: 10px; padding: 18px 20px;
+  font: 700 1.6rem/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.nomatch { color: var(--muted); margin: 0; }
+
+/* Aftellen */
+.countdown {
+  position: fixed; inset: 0; background: color-mix(in srgb, var(--ink) 88%, transparent);
+  display: grid; place-items: center; z-index: 20;
+}
+.countdown span { font: 700 min(40vw, 260px)/1 var(--font-display); color: var(--gold); animation: pop 1s ease-out infinite; }
+@keyframes pop { from { transform: scale(1.25); opacity: 0.2; } 30% { transform: scale(1); opacity: 1; } }
+
+/* Geschiedenis */
+.history { display: grid; gap: 10px; }
+.hround { display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.hround .lbl { font: 700 0.95rem var(--font-display); text-transform: uppercase; color: var(--muted); }
+.hround .lbl.ok { color: var(--grass); }
+.hpicks { display: flex; flex-wrap: wrap; gap: 10px; min-width: 0; }
+.hpick { display: flex; align-items: center; gap: 8px; background: var(--page); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px 3px 3px; font-size: 0.9rem; }
+.hpick img, .hpick .ph { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: var(--line); }
+.hpick b { font-weight: 600; }
+.hpick small { color: var(--muted); }
+
+footer { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); padding-top: 14px; }
+
+@media (prefers-reduced-motion: reduce) { .countdown span { animation: none; } .cand { transition: none; } }
+</style>
+</head>
+<body>
+
+<section class="join" id="joinView">
+  <h1 class="brand">Speler<span>match</span></h1>
+  <p>Iedereen kiest tegelijk een voetballer. Leg verbanden tussen de keuzes en probeer samen op dezelfde speler uit te komen.</p>
+  <form id="joinForm" class="row">
+    <input type="text" id="nameInput" placeholder="Jouw naam" maxlength="24" autocomplete="nickname" required>
+    <button class="btn primary" type="submit">Meedoen</button>
+  </form>
+</section>
+
+<main class="wrap" id="gameView" hidden>
+  <header class="top">
+    <h1 class="brand">Speler<span>match</span></h1>
+    <span class="round" id="roundLabel">Ronde 1</span>
+  </header>
+
+  <section>
+    <h2>Spelers</h2>
+    <div class="players" id="playerList"></div>
+  </section>
+
+  <section id="pickSection">
+    <h2>Kies jouw speler</h2>
+    <p class="hint">Typ een naam, bijvoorbeeld Henry, en kies de juiste foto. De anderen zien je keuze pas bij het onthullen.</p>
+    <form id="searchForm" class="row">
+      <input type="text" id="searchInput" placeholder="Naam van een voetballer" maxlength="60" autocomplete="off">
+      <button class="btn primary" type="submit" id="searchBtn">Zoeken</button>
+    </form>
+    <p class="error" id="searchError" hidden></p>
+    <div id="candidates" class="grid" style="margin-top:16px"></div>
+    <p class="hint" id="noPhotoWrap" hidden style="margin-top:14px">
+      Staat hij er niet tussen? <button class="btn ghost" type="button" id="noPhotoBtn"></button>
+    </p>
+  </section>
+
+  <section id="mySection" hidden>
+    <h2>Jouw keuze</h2>
+    <div class="mine">
+      <div id="myCard"></div>
+      <div style="display:grid;gap:12px;justify-items:start">
+        <p class="status" id="waitStatus"></p>
+        <button class="btn ghost" type="button" id="changeBtn">Andere speler kiezen</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="revealCta" class="reveal-cta" hidden>
+    <p class="status">Iedereen heeft een speler gekozen.</p>
+    <button class="btn gold" type="button" id="revealBtn">Aftellen en tonen</button>
+  </section>
+
+  <section id="revealSection" hidden>
+    <h2 id="revealTitle">Onthuld</h2>
+    <div id="matchBanner" class="match" hidden></div>
+    <p id="noMatch" class="nomatch" hidden>Nog geen match. Zoek het verband tussen deze spelers en kies opnieuw.</p>
+    <div id="revealGrid" class="grid" style="margin-top:16px"></div>
+    <div class="row" style="margin-top:18px">
+      <button class="btn primary" type="button" id="nextBtn">Volgende ronde</button>
+    </div>
+  </section>
+
+  <section id="historySection" hidden>
+    <h2>Eerdere rondes</h2>
+    <div class="history" id="historyList"></div>
+  </section>
+
+  <footer>
+    <span>Ingelogd als <b id="meName"></b> · <a href="#" id="logoutLink" style="color:inherit">wissel naam</a></span>
+    <button class="btn ghost" type="button" id="resetBtn">Nieuw spel</button>
+  </footer>
+</main>
+
+<div class="countdown" id="countdown" hidden><span id="countNum">3</span></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let me = '';
+let state = null;
+let source = null;
+let lastQuery = '';
+let countdownTimer = null;
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const initials = (t) => esc(String(t).split(/\s+/).map((w) => w[0]).join('').slice(0, 3).toUpperCase());
+
+function sticker(p, extra = '') {
+  const photo = p.image ? `<img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy" referrerpolicy="no-referrer">` : `<span class="initials">${initials(p.title)}</span>`;
+  return `<div class="photo">${photo}</div><div class="name">${esc(p.title)}</div><div class="desc">${esc(p.description || '')}</div>${extra}`;
+}
+
+async function post(action, body = {}) {
+  const res = await fetch('/api/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: me, ...body }) });
+  return res.json().catch(() => ({}));
+}
+
+// --- Inloggen ---
+function join(name) {
+  me = name.trim().slice(0, 24);
+  if (!me) return;
+  try { localStorage.setItem('spelermatch-name', me); } catch {}
+  $('meName').textContent = me;
+  $('joinView').hidden = true;
+  $('gameView').hidden = false;
+  connect();
+}
+
+function connect() {
+  if (source) source.close();
+  source = new EventSource('/events?name=' + encodeURIComponent(me));
+  source.onmessage = (e) => { state = JSON.parse(e.data); render(); };
+}
+
+$('joinForm').addEventListener('submit', (e) => { e.preventDefault(); join($('nameInput').value); });
+$('logoutLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  if (source) source.close();
+  try { localStorage.removeItem('spelermatch-name'); } catch {}
+  location.reload();
+});
+
+// --- Zoeken en kiezen ---
+let candidates = [];
+$('searchForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const q = $('searchInput').value.trim();
+  if (q.length < 2) return;
+  lastQuery = q;
+  $('searchBtn').disabled = true;
+  $('searchError').hidden = true;
+  $('candidates').innerHTML = '<p class="hint">Foto\'s zoeken...</p>';
+  try {
+    const res = await fetch('/api/search?q=' + encodeURIComponent(q));
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Zoeken lukte niet.');
+    candidates = data.results;
+    $('candidates').innerHTML = candidates.length
+      ? candidates.map((c, i) => `<button type="button" class="sticker cand" data-i="${i}">${sticker(c)}</button>`).join('')
+      : '<p class="hint">Geen voetballer gevonden met deze naam.</p>';
+  } catch (err) {
+    $('candidates').innerHTML = '';
+    $('searchError').textContent = err.message;
+    $('searchError').hidden = false;
+  } finally {
+    $('searchBtn').disabled = false;
+    $('noPhotoBtn').textContent = `Gebruik "${lastQuery}" zonder foto`;
+    $('noPhotoWrap').hidden = false;
+  }
+});
+
+$('candidates').addEventListener('click', (e) => {
+  const btn = e.target.closest('.cand');
+  if (btn) choose(candidates[Number(btn.dataset.i)]);
+});
+$('noPhotoBtn').addEventListener('click', () => choose({ title: lastQuery, description: 'Zonder foto', image: null }));
+
+async function choose(pick) {
+  const res = await post('pick', { pick });
+  if (res.error) { $('searchError').textContent = res.error; $('searchError').hidden = false; return; }
+  $('candidates').innerHTML = '';
+  $('searchInput').value = '';
+  $('noPhotoWrap').hidden = true;
+}
+
+$('changeBtn').addEventListener('click', () => post('unpick'));
+$('revealBtn').addEventListener('click', () => { $('revealBtn').disabled = true; post('reveal'); });
+$('nextBtn').addEventListener('click', () => post('next'));
+
+let resetArmed = false;
+$('resetBtn').addEventListener('click', () => {
+  if (!resetArmed) {
+    resetArmed = true;
+    $('resetBtn').textContent = 'Zeker? Klik nogmaals';
+    setTimeout(() => { resetArmed = false; $('resetBtn').textContent = 'Nieuw spel'; }, 4000);
+    return;
+  }
+  resetArmed = false;
+  $('resetBtn').textContent = 'Nieuw spel';
+  post('reset');
+});
+
+// --- Weergave ---
+function render() {
+  const s = state;
+  $('roundLabel').textContent = 'Ronde ' + s.round;
+
+  $('playerList').innerHTML = s.players.map((p) => {
+    const cls = ['chip', p.submitted ? 'done' : '', p.online ? '' : 'off'].join(' ');
+    const status = s.phase === 'collect' ? (p.submitted ? 'klaar' : 'kiest...') : '';
+    return `<span class="${cls}"><span class="dot"></span>${esc(p.name)}${p.you ? ' <small>(jij)</small>' : ''}${status ? ` <small>${status}</small>` : ''}</span>`;
+  }).join('');
+
+  const collecting = s.phase === 'collect';
+  $('pickSection').hidden = !collecting || !!s.myPick;
+  $('mySection').hidden = !collecting || !s.myPick;
+  if (s.myPick) {
+    $('myCard').innerHTML = `<div class="sticker">${sticker(s.myPick)}</div>`;
+    const waiting = s.players.filter((p) => p.online && !p.submitted).map((p) => p.name);
+    $('waitStatus').textContent = waiting.length ? 'Wachten op ' + waiting.join(', ') + '.' : 'Iedereen is klaar.';
+  }
+  $('revealCta').hidden = !(collecting && s.allSubmitted);
+  $('revealBtn').disabled = false;
+
+  // Aftellen
+  if (s.phase === 'countdown') {
+    $('countdown').hidden = false;
+    const end = Date.now() + s.revealInMs;
+    clearInterval(countdownTimer);
+    const tick = () => { $('countNum').textContent = Math.max(1, Math.ceil((end - Date.now()) / 1000)); };
+    tick();
+    countdownTimer = setInterval(tick, 100);
+  } else {
+    $('countdown').hidden = true;
+    clearInterval(countdownTimer);
+  }
+
+  // Onthulling
+  $('revealSection').hidden = s.phase !== 'reveal';
+  if (s.phase === 'reveal') {
+    $('revealTitle').textContent = 'Ronde ' + s.round + ' onthuld';
+    $('revealGrid').innerHTML = s.reveal.map((p) => `<div><div class="owner">${esc(p.player)}</div><div class="sticker">${sticker(p)}</div></div>`).join('');
+    $('matchBanner').hidden = !s.match;
+    $('matchBanner').textContent = s.match ? `Match! Iedereen koos ${s.reveal[0].title}, in ronde ${s.round}.` : '';
+    $('noMatch').hidden = s.match;
+    $('nextBtn').textContent = s.match ? 'Nog een keer, nieuwe reeks' : 'Volgende ronde';
+  }
+
+  // Geschiedenis (de ronde die nu onthuld staat zit er al in en wordt niet dubbel getoond)
+  const past = s.phase === 'reveal' ? s.history.slice(0, -1) : s.history;
+  $('historySection').hidden = past.length === 0;
+  $('historyList').innerHTML = past.slice().reverse().map((h) => `
+    <div class="hround">
+      <span class="lbl ${h.match ? 'ok' : ''}">Ronde ${h.round}${h.match ? '<br>match' : ''}</span>
+      <div class="hpicks">${h.picks.map((p) => `<span class="hpick">${p.image ? `<img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">` : '<span class="ph"></span>'}<span><b>${esc(p.title)}</b> <small>${esc(p.player)}</small></span></span>`).join('')}</div>
+    </div>`).join('');
+}
+
+// Houd de server wakker zolang dit scherm open staat (gratis hosting slaapt na 15 minuten zonder verkeer)
+setInterval(() => { if (me && !document.hidden) post('ping'); }, 4 * 60 * 1000);
+
+// Automatisch opnieuw inloggen met de bewaarde naam
+try { const saved = localStorage.getItem('spelermatch-name'); if (saved) join(saved); } catch {}
+</script>
+</body>
+</html>
