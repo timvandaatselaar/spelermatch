@@ -3,272 +3,231 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f4f4f1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0c0d0d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0F3D2C">
 <title>Spelermatch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Big+Shoulders+Display:wght@900&display=swap">
 <style>
-/* Mobiel eerst: één kolom met compacte panelen, acties in een vaste balk onderin. Groen alleen voor status. */
+/* Kalklijn: één groen thema. Diep groen veld met zachte maaibanen, lichtere groene vlakken zonder randen,
+   limoen alleen voor de hoofdactie, de klaar-stip en de match. */
 :root {
-  --bg: #f4f4f1;
-  --surface: #ffffff;
-  --fg: #141414;
-  --muted: #6e6e69;
-  --line: #e4e4df;
-  --soft: #f0f0ec;
-  --accent: #17694a;
-  --accent-ink: #ffffff;
-  --accent-soft: #e4f0e9;
-  --shadow: 0 1px 2px rgba(20, 20, 20, 0.04), 0 6px 20px rgba(20, 20, 20, 0.04);
-  --halo: none;
+  --bg: #0F3D2C;
+  --stripe: #10412F;
+  --panel: #16493A;
+  --soft: rgba(247, 245, 238, 0.08);
+  --soft-2: rgba(247, 245, 238, 0.14);
+  --text: #F7F5EE;
+  --muted: #9DB3A7;
+  --lime: #CDEB5B;
+  --lime-ink: #0B1F16;
   --font: "Geist", -apple-system, "Helvetica Neue", Arial, sans-serif;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0c0d0d; --surface: #161717; --fg: #f1f1ef; --muted: #8d908d; --line: #272928; --soft: #1f2120;
-    --accent: #45b583; --accent-ink: #0c0d0d; --accent-soft: rgba(69, 181, 131, 0.14);
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --halo: drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.75)); color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0c0d0d; --surface: #161717; --fg: #f1f1ef; --muted: #8d908d; --line: #272928; --soft: #1f2120;
-  --accent: #45b583; --accent-ink: #0c0d0d; --accent-soft: rgba(69, 181, 131, 0.14);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --halo: drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.75)); color-scheme: dark;
+  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; }
 body {
-  background: var(--bg); color: var(--fg); font: 400 15px/1.45 var(--font);
+  min-height: 100vh;
+  background: repeating-linear-gradient(180deg, var(--bg) 0 70px, var(--stripe) 70px 140px) fixed, var(--bg);
+  color: var(--text); font: 400 15px/1.45 var(--font);
   -webkit-font-smoothing: antialiased;
-  padding-left: max(12px, env(safe-area-inset-left, 0px));
-  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 0 32px;
 }
-body.has-bar { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+body.has-bar { padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)); }
 img { max-width: 100%; }
 [hidden] { display: none !important; }
 button, input { font: inherit; color: inherit; }
 
-.wrap { max-width: 640px; margin: 0 auto; display: grid; gap: 10px; }
+.wrap { max-width: 560px; margin: 0 auto; display: grid; gap: 22px; }
 
-/* Bovenbalk */
-header.top { display: flex; justify-content: space-between; align-items: center; padding-block: 12px 2px; }
-.brand { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
-.mark { width: 24px; height: 24px; flex: none; }
-.pill {
-  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px;
-  font-size: 12px; font-weight: 500; background: var(--surface); border: 1px solid var(--line); color: var(--muted);
-  font-variant-numeric: tabular-nums; white-space: nowrap;
-}
-.pill.ok { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
-.pill.plain { background: var(--soft); border-color: transparent; }
+/* Kop */
+header.top { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; }
+.brand { display: flex; align-items: center; gap: 9px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.mark { width: 24px; height: 24px; flex: none; border-radius: 6px; }
+.round { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
-/* Paneel */
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 14px; }
-.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
-.panel-head h2 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
-.panel-head .meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-@media (min-width: 600px) { .panel { padding: 20px; border-radius: 16px; } .wrap { gap: 14px; } header.top { padding-block: 20px 6px; } }
+/* Titels en kleine labels */
+.title { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+.title.lime { color: var(--lime); }
+.sub { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+.label { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+.label-row { display: flex; justify-content: space-between; align-items: baseline; }
 
-/* Formulieren en knoppen */
+/* Velden en knoppen */
+.row { display: flex; gap: 8px; }
+.field { position: relative; flex: 1; min-width: 0; }
+.field svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
 input[type="text"] {
-  width: 100%; height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px;
-  background: var(--surface); font-size: 16px; transition: border-color 0.15s ease;
+  width: 100%; height: 48px; padding: 0 14px; border: 0; border-radius: 12px;
+  background: var(--panel); color: var(--text); font-size: 16px;
 }
+.field input { padding-left: 40px; }
 input[type="text"]::placeholder { color: var(--muted); }
-input[type="text"]:focus { outline: none; border-color: var(--fg); }
-.search { position: relative; flex: 1; min-width: 0; }
-.search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
-.search input { padding-left: 36px; }
+input[type="text"]:focus { outline: none; background: #1A5241; }
 
 .btn {
-  height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid transparent; cursor: pointer;
-  background: var(--fg); color: var(--surface); font-weight: 500; white-space: nowrap;
-  transition: opacity 0.15s ease;
+  height: 48px; padding: 0 18px; border-radius: 12px; border: 0; cursor: pointer;
+  background: var(--soft-2); color: var(--text); font-weight: 600; white-space: nowrap; transition: opacity 0.15s ease;
 }
 .btn:active { opacity: 0.8; }
-.btn.accent { background: var(--accent); color: var(--accent-ink); }
+.btn.lime { background: var(--lime); color: var(--lime-ink); }
 .btn.full { width: 100%; height: 52px; font-size: 16px; }
-.btn.text { background: none; color: var(--muted); padding: 0; height: auto; font-weight: 500; border: 0; }
-.btn.text:hover { color: var(--fg); }
-.btn.small { height: 32px; padding: 0 12px; font-size: 13px; background: var(--surface); color: var(--fg); border-color: var(--line); }
+.btn.small { height: 34px; padding: 0 14px; font-size: 13px; border-radius: 9px; }
+.btn.text { background: none; color: var(--muted); padding: 0; height: auto; font-weight: 500; }
+.btn.text:hover { color: var(--text); }
 .btn:disabled { opacity: 0.4; cursor: default; }
-.btn:focus-visible, .cand:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-.row { display: flex; gap: 8px; }
-.row > input { flex: 1; min-width: 0; }
+.btn:focus-visible, .cand:focus-visible, input:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
 /* Inloggen */
-.join { max-width: 400px; margin: 14vh auto 0; }
-.join .brand { margin-bottom: 20px; }
-.join h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 4px; }
-.join p { margin: 0 0 16px; color: var(--muted); }
+.join { max-width: 420px; margin: 18vh auto 0; display: grid; gap: 24px; }
+.join .logo { width: 44px; height: 44px; border-radius: 11px; }
+.join h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.12; }
+.join h1 span { color: var(--lime); }
+.join p { margin: 0; color: var(--muted); font-size: 16px; }
+.join .foot { font-size: 13px; }
 
-/* Spelers: horizontale rij avatars met status */
-.players { list-style: none; margin: -4px -14px; padding: 6px 14px; display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; }
+/* Spelers */
+.players { list-style: none; margin: 0; padding: 0 0 2px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
 .players::-webkit-scrollbar { display: none; }
-.players li { flex: none; width: 52px; display: grid; justify-items: center; gap: 5px; }
+.players li { flex: none; width: 48px; display: grid; justify-items: center; gap: 6px; }
 .players li.off { opacity: 0.4; }
-.players .name { max-width: 100%; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
-.players li.you .name { color: var(--fg); font-weight: 500; }
-.avatar {
-  position: relative; width: 42px; height: 42px; border-radius: 50%; flex: none; display: grid; place-items: center;
-  background: var(--soft); font-size: 14px; font-weight: 600; color: var(--muted);
-}
-.players li.you .avatar { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--fg); }
-.avatar .st {
-  position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%;
-  display: grid; place-items: center; border: 2px solid var(--surface);
-}
-.avatar .st svg { width: 10px; height: 10px; }
-.avatar .st.ok { background: var(--accent); color: var(--accent-ink); }
-.avatar .st.wait { background: var(--line); color: var(--muted); }
-.avatar.sm { width: 18px; height: 18px; font-size: 9px; }
+.players .name { max-width: 100%; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.players li.you .name { color: var(--text); font-weight: 600; }
+.avatar { position: relative; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); font-size: 12px; font-weight: 600; }
+.avatar .dot { position: absolute; right: -1px; bottom: -1px; width: 10px; height: 10px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 2px var(--bg); }
 
-/* Zoekresultaten als lijst */
-.context { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
-.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 12px 8px; margin-top: 10px; }
-@media (min-width: 600px) { .tiles { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 16px 10px; } }
-.tile { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 0; text-align: left; background: none; border: 0; cursor: pointer; }
-.tphoto { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--soft); display: grid; place-items: center; }
+/* Zoekresultaten als tegels */
+.context { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 16px 8px; margin-top: 12px; }
+@media (min-width: 600px) { .tiles { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 18px 12px; } }
+.tile { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 0; text-align: left; background: none; border: 0; cursor: pointer; }
+.tphoto { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--panel); display: grid; place-items: center; }
 .tphoto img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
-.tphoto .initials { font-size: 15px; font-weight: 500; color: var(--muted); }
-.tname { font-size: 12px; font-weight: 600; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.tline { display: flex; align-items: center; gap: 5px; min-height: 14px; }
-.tyear { font-size: 11px; color: var(--muted); line-height: 1; font-variant-numeric: tabular-nums; }
-.tpos { font-size: 9px; font-weight: 600; line-height: 1; padding: 2px 4px; border-radius: 4px; background: var(--soft); color: var(--muted); letter-spacing: 0.02em; }
-.tpos:empty { display: none; }
-.tile.used { cursor: not-allowed; }
-.tile.used .tphoto img, .tile.used .tphoto .initials, .tile.used .tname, .tile.used .tyear { opacity: 0.35; }
-.tnote { position: absolute; left: 4px; top: 4px; padding: 1px 5px; border-radius: 6px; font-size: 10px; font-weight: 600; background: var(--surface); color: var(--muted); }
+.tphoto .initials, .thumb .initials { font-size: 15px; font-weight: 500; color: var(--muted); }
+.tname { font-size: 12px; font-weight: 500; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tline { display: flex; align-items: center; gap: 4px; min-height: 13px; font-size: 11px; color: var(--muted); line-height: 1; font-variant-numeric: tabular-nums; }
+.tpos:not(:empty)::before { content: "· "; }
+.tile.used { cursor: not-allowed; opacity: 0.35; }
 .tile:active .tphoto { transform: scale(0.97); }
 @media (hover: hover) { .tile:not(.used):hover .tname { text-decoration: underline; text-underline-offset: 2px; } }
-.list { display: grid; margin-top: 6px; }
-.item {
-  display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; padding: 8px 0; text-align: left;
-  background: none; border: 0; border-top: 1px solid var(--line); cursor: pointer;
-}
-.list .item:first-child { border-top: 0; }
-.thumb { width: 48px; height: 48px; border-radius: 10px; overflow: hidden; flex: none; background: var(--soft); display: grid; place-items: center; }
-.thumb img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
-.thumb .initials { font-size: 15px; font-weight: 500; color: var(--muted); }
-.item .text { flex: 1; min-width: 0; }
-.item .name { font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.item .desc { color: var(--muted); font-size: 13px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.item .chev { color: var(--muted); flex: none; width: 16px; height: 16px; }
-.item.used { cursor: not-allowed; }
-.item.used .thumb, .item.used .text { opacity: 0.4; }
-.item .note { flex: none; font-size: 12px; color: var(--muted); }
-.item.busy { opacity: 0.5; }
-@media (hover: hover) { .item:not(.used):hover .name { text-decoration: underline; text-underline-offset: 3px; } }
 
-.error { color: var(--fg); margin: 10px 0 0; font-size: 14px; }
-.hint { color: var(--muted); margin: 10px 0 0; font-size: 13px; }
-.loading { color: var(--muted); margin: 14px 0 4px; font-size: 14px; }
+.error { margin: 12px 0 0; font-size: 14px; color: var(--lime); }
+.hint { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.loading { margin: 16px 0 4px; font-size: 14px; color: var(--muted); }
+
+/* Paneel */
+.panel { background: var(--panel); border-radius: 16px; padding: 14px; }
 
 /* Jouw keuze */
-.mine { display: flex; align-items: center; gap: 12px; }
-.mine .thumb { width: 56px; height: 56px; }
+.mine { display: flex; align-items: center; gap: 14px; }
+.thumb { width: 64px; height: 80px; border-radius: 10px; overflow: hidden; flex: none; background: var(--bg); display: grid; place-items: center; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
 .mine .text { flex: 1; min-width: 0; }
-.mine .name { font-weight: 600; }
-.mine .status { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.mine .name { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.mine .status { margin: 3px 0 0; font-size: 13px; color: var(--muted); }
 
-/* Uitslag */
-.verdict { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; font-size: 15px; font-weight: 500; }
-.verdict .rest { color: var(--muted); font-weight: 400; font-size: 14px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 8px; }
-@media (min-width: 600px) { .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; } }
-.card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
-.card .owner { display: flex; align-items: center; gap: 6px; padding: 7px 8px; font-size: 12px; font-weight: 500; border-bottom: 1px solid var(--line); min-width: 0; }
-.card .owner span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.card .photo { aspect-ratio: 1; background: var(--soft); display: grid; place-items: center; overflow: hidden; }
-.card .photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
-.card .photo .initials { font-size: 22px; font-weight: 300; color: var(--muted); }
-.card .meta { padding: 8px; flex: 1; display: flex; flex-direction: column; }
-.card .name { font-size: 13px; font-weight: 600; line-height: 1.25; }
-.card .desc { display: none; color: var(--muted); font-size: 12px; line-height: 1.3; margin-top: 2px; }
-@media (min-width: 600px) { .card .meta { padding: 10px 12px 12px; } .card .name { font-size: 14px; } .card .desc { display: block; } .card .owner { padding: 8px 12px; font-size: 13px; } }
-.badges { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: auto; padding-top: 8px; }
-.badges .flag { height: 10px; width: auto; border-radius: 2px; box-shadow: 0 0 0 1px var(--line); }
-.badges .club { height: 15px; width: 15px; object-fit: contain; filter: var(--halo); }
-@media (min-width: 600px) { .badges { gap: 7px; } .badges .flag { height: 12px; } .badges .club { height: 18px; width: 18px; } }
+/* Uitslag: ruilkaarten */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; margin-top: 16px; }
+@media (min-width: 600px) { .cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; } }
+.tcard { position: relative; aspect-ratio: 2 / 3; border-radius: 12px; overflow: hidden; background: var(--panel); }
+.tcard > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+.tcard > .initials { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; color: var(--muted); }
+.tcard::after { content: ""; position: absolute; inset: 40% 0 0; background: linear-gradient(180deg, rgba(11, 31, 22, 0), rgba(11, 31, 22, 0.92)); }
+.tcard.match { box-shadow: inset 0 0 0 1.5px var(--lime); }
+.tcard .chip { position: absolute; z-index: 1; left: 6px; top: 6px; max-width: calc(100% - 12px); padding: 2px 7px; border-radius: 999px; font-size: 11px; background: rgba(15, 61, 44, 0.75); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tcard.match .chip { color: var(--lime); }
+.tcard .bottom { position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; padding: 9px; display: grid; gap: 6px; }
+.tcard .pname { font-size: 13px; font-weight: 600; line-height: 1.2; }
+.badges { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.badges .flag { height: 9px; width: auto; border-radius: 1.5px; }
+.badges .club { width: 16px; height: 16px; padding: 2px; border-radius: 4px; background: rgba(247, 245, 238, 0.14); object-fit: contain; }
 
-/* Vaste actiebalk onderin */
-.bar {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
-  padding: 12px max(12px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
-  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--line);
-}
-.bar-inner { max-width: 640px; margin: 0 auto; display: grid; gap: 6px; }
+/* Vaste actiebalk */
+.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--panel);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.bar-inner { max-width: 560px; margin: 0 auto; display: grid; gap: 6px; }
 .bar-note { margin: 0; text-align: center; font-size: 12px; color: var(--muted); }
 
-/* Aftellen */
-.countdown { position: fixed; inset: 0; background: var(--bg); display: grid; place-items: center; z-index: 20; }
-.countdown span { font-size: min(44vw, 240px); font-weight: 300; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; animation: fade 1s ease-out infinite; }
-@keyframes fade { from { opacity: 0.15; } 40% { opacity: 1; } }
+/* Aftellen: de middencirkel */
+.countdown { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; align-content: center; gap: 4px;
+  background: repeating-linear-gradient(180deg, var(--bg) 0 70px, var(--stripe) 70px 140px), var(--bg); }
+.countdown::before { content: ""; position: absolute; left: 50%; top: 50%; width: min(82vw, 320px); aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid rgba(247, 245, 238, 0.2); }
+.countdown::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: rgba(247, 245, 238, 0.2); }
+.countdown .cround { position: relative; z-index: 1; font-size: 13px; color: var(--muted); }
+.countdown span#countNum { position: relative; z-index: 1; font: 900 200px/0.85 var(--display); color: var(--lime); font-variant-numeric: tabular-nums; animation: fade 1s ease-out infinite; }
+.countdown .csub { position: relative; z-index: 1; font-size: 17px; color: var(--muted); }
+@keyframes fade { from { opacity: 0.2; } 35% { opacity: 1; } }
 
 /* Eerdere rondes */
-.hround { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
-.hround:first-child { border-top: 0; padding-top: 0; }
-.hround .lbl { display: grid; gap: 4px; justify-items: start; color: var(--muted); font-size: 13px; padding-top: 2px; font-variant-numeric: tabular-nums; }
+.hround { display: grid; grid-template-columns: 62px 1fr; gap: 10px; padding: 10px 0; }
+.hround + .hround { border-top: 1px solid var(--soft); }
+.hround:first-child { padding-top: 0; }
+.hround:last-child { padding-bottom: 0; }
+.hround .lbl { display: grid; gap: 4px; justify-items: start; font-size: 13px; color: var(--muted); padding-top: 6px; }
+.hround .lbl .m { color: var(--lime); }
 .hpicks { display: grid; gap: 10px; min-width: 0; }
 .hpick { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; }
-.hpick > img, .hpick > .ph { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: var(--soft); flex: none; }
-.hpick .htext { min-width: 0; flex: 1; }
-.hpick .hname { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; }
-.hpick small { color: var(--muted); }
-.hpick .badges { padding-top: 3px; gap: 4px; }
-.hpick .badges .flag { height: 9px; }
-.hpick .badges .club { height: 13px; width: 13px; }
+.hpick > img, .hpick > .ph { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: var(--bg); flex: none; }
+.hpick .htext { min-width: 0; flex: 1; display: grid; gap: 4px; }
+.hpick .hname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hpick small { color: var(--muted); font-size: 12px; }
+.hpick .badges .flag { height: 8px; }
+.hpick .badges .club { width: 14px; height: 14px; padding: 1.5px; border-radius: 3px; }
+/* De vorige ronde springt eruit; oudere rondes zijn kleiner en gedempt */
+.hround.latest { grid-template-columns: 1fr; gap: 12px; padding-bottom: 14px; }
+.hround.latest .lbl { padding-top: 0; color: var(--text); font-weight: 600; font-size: 14px; display: flex; gap: 8px; }
+.hround.latest .hpick { font-size: 16px; font-weight: 600; gap: 12px; }
+.hround.latest .hpick > img, .hround.latest .hpick > .ph { width: 48px; height: 48px; }
+.hround.latest .hpick small { font-weight: 400; font-size: 13px; }
+.hround.latest .hpick .badges .flag { height: 10px; }
+.hround.latest .hpick .badges .club { width: 18px; height: 18px; padding: 2px; border-radius: 4px; }
+.hround:not(.latest) .hpick { opacity: 0.75; }
 
-footer { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; padding: 6px 2px 0; }
+footer { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; padding-top: 4px; }
 footer a { color: inherit; }
 
-@media (prefers-reduced-motion: reduce) { .countdown span { animation: none; } input, .btn { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .countdown span#countNum { animation: none; } .btn { transition: none; } }
 </style>
 </head>
 <body>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="mark" viewBox="0 0 26 26"><rect width="26" height="26" rx="7" style="fill:var(--fg)"/><circle cx="10.5" cy="13" r="5" fill="none" stroke-width="1.8" style="stroke:var(--surface)"/><circle cx="15.5" cy="13" r="5" fill="none" stroke-width="1.8" style="stroke:var(--accent)"/></symbol>
-  <symbol id="check" viewBox="0 0 10 10"><path d="M2 5.2l2 2 4-4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="dots" viewBox="0 0 10 10"><circle cx="2" cy="5" r="1" fill="currentColor"/><circle cx="5" cy="5" r="1" fill="currentColor"/><circle cx="8" cy="5" r="1" fill="currentColor"/></symbol>
-  <symbol id="chev" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="mark" viewBox="0 0 120 120"><rect width="120" height="120" rx="30" fill="#0E5A38"/><path d="M60 36.93 A26 26 0 0 1 60 83.07 A26 26 0 0 1 60 36.93 Z" fill="#CDEB5B"/><line x1="60" y1="14" x2="60" y2="106" stroke="#F7F5EE" stroke-width="3"/><circle cx="48" cy="60" r="26" fill="none" stroke="#F7F5EE" stroke-width="5"/><circle cx="72" cy="60" r="26" fill="none" stroke="#F7F5EE" stroke-width="5"/><circle cx="60" cy="60" r="4" fill="#0B1F16"/></symbol>
+  <symbol id="mark-ink" viewBox="0 0 120 120"><rect width="120" height="120" rx="30" fill="#0B1F16"/><path d="M60 36.93 A26 26 0 0 1 60 83.07 A26 26 0 0 1 60 36.93 Z" fill="#CDEB5B"/><line x1="60" y1="14" x2="60" y2="106" stroke="#F7F5EE" stroke-width="3"/><circle cx="48" cy="60" r="26" fill="none" stroke="#F7F5EE" stroke-width="5"/><circle cx="72" cy="60" r="26" fill="none" stroke="#F7F5EE" stroke-width="5"/><circle cx="60" cy="60" r="4" fill="#0B1F16"/></symbol>
 </svg>
 
 <section class="join" id="joinView">
-  <p class="brand"><svg class="mark"><use href="#mark"/></svg>Spelermatch</p>
-  <div class="panel">
-    <h1>Meedoen</h1>
-    <p>Kies tegelijk een voetballer en probeer samen op dezelfde uit te komen.</p>
-    <form id="joinForm" class="row">
+  <svg class="logo" aria-label="Spelermatch"><use href="#mark-ink"/></svg>
+  <h1>Zelfde gedachte.<br><span>Zelfde speler.</span></h1>
+  <p>Kies tegelijk een voetballer. Leg verbanden tot jullie op dezelfde uitkomen.</p>
+  <form id="joinForm">
+    <p class="label">Je naam</p>
+    <div class="row">
       <input type="text" id="nameInput" placeholder="Je naam" maxlength="24" autocomplete="nickname" required>
-      <button class="btn" type="submit">Start</button>
-    </form>
-  </div>
+      <button class="btn lime" type="submit">Start</button>
+    </div>
+  </form>
+  <p class="foot">Geen account nodig.</p>
 </section>
 
 <main class="wrap" id="gameView" hidden>
   <header class="top">
     <p class="brand"><svg class="mark"><use href="#mark"/></svg>Spelermatch</p>
-    <span class="pill" id="roundLabel">Ronde 1</span>
+    <span class="round" id="roundLabel">Ronde 1</span>
   </header>
 
-  <section class="panel">
-    <div class="panel-head"><h2>Spelers</h2><span class="meta" id="playerMeta"></span></div>
+  <section>
+    <div class="label-row"><p class="label">Spelers</p><span class="label" id="playerMeta"></span></div>
     <ul class="players" id="playerList"></ul>
   </section>
 
-  <section class="panel" id="pickSection">
-    <div class="panel-head"><h2>Kies je speler</h2></div>
-    <form id="searchForm" class="row">
-      <div class="search">
+  <section id="pickSection">
+    <h2 class="title">Kies je speler</h2>
+    <form id="searchForm" class="row" style="margin-top:14px">
+      <div class="field">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5" stroke-linecap="round"/></svg>
         <input type="text" id="searchInput" placeholder="Henry, of juventus 2005" maxlength="60" autocomplete="off" enterkeyhint="search">
       </div>
@@ -283,8 +242,10 @@ footer a { color: inherit; }
     </p>
   </section>
 
-  <section class="panel" id="mySection" hidden>
-    <div class="mine">
+  <section id="mySection" hidden>
+    <h2 class="title">Jouw keuze</h2>
+    <p class="sub" id="mySub">De anderen zien je keuze pas bij het tonen.</p>
+    <div class="panel mine" style="margin-top:14px">
       <div id="myThumb" class="thumb"></div>
       <div class="text">
         <div class="name" id="myName"></div>
@@ -294,16 +255,15 @@ footer a { color: inherit; }
     </div>
   </section>
 
-  <section class="panel" id="revealSection" hidden>
-    <div class="panel-head"><h2 id="revealTitle">Uitslag</h2></div>
-    <p class="verdict" id="matchBanner" hidden></p>
-    <p class="verdict" id="noMatch" hidden><span class="pill plain">Geen match</span><span class="rest">Zoek het verband en kies opnieuw.</span></p>
-    <div id="revealGrid" class="grid"></div>
+  <section id="revealSection" hidden>
+    <h2 class="title" id="revealTitle">Geen match</h2>
+    <p class="sub" id="revealSub"></p>
+    <div id="revealGrid" class="cards"></div>
   </section>
 
-  <section class="panel" id="historySection" hidden>
-    <div class="panel-head"><h2>Eerdere rondes</h2></div>
-    <div id="historyList"></div>
+  <section id="historySection" hidden>
+    <p class="label" id="historyLabel">Eerdere rondes</p>
+    <div class="panel" id="historyList"></div>
   </section>
 
   <footer>
@@ -314,17 +274,21 @@ footer a { color: inherit; }
 
 <div class="bar" id="revealBar" hidden>
   <div class="bar-inner">
-    <button class="btn full accent" type="button" id="revealBtn">Aftellen en tonen</button>
+    <button class="btn full lime" type="button" id="revealBtn">Aftellen en tonen</button>
     <p class="bar-note">Iedereen heeft gekozen</p>
   </div>
 </div>
 <div class="bar" id="nextBar" hidden>
   <div class="bar-inner">
-    <button class="btn full" type="button" id="nextBtn">Volgende ronde</button>
+    <button class="btn full lime" type="button" id="nextBtn">Volgende ronde</button>
   </div>
 </div>
 
-<div class="countdown" id="countdown" hidden><span id="countNum">3</span></div>
+<div class="countdown" id="countdown" hidden>
+  <p class="cround" id="countRound">Ronde 1</p>
+  <span id="countNum">3</span>
+  <p class="csub">Kijk allemaal tegelijk</p>
+</div>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -345,7 +309,7 @@ function photo(p) {
 // Vlag en clublogo's, klein onder de naam
 function badges(p) {
   const flag = p.country?.flag ? `<img class="flag" src="${esc(p.country.flag)}" alt="${esc(p.country.name)}" title="${esc(p.country.name)}" referrerpolicy="no-referrer">` : '';
-  const clubs = (p.clubs || []).filter((c) => c.logo)
+  const clubs = (p.clubs || []).filter((c) => c.logo).slice(0, 4)
     .map((c) => `<img class="club" src="${esc(c.logo)}" alt="${esc(c.name)}" title="${esc(c.name)}" referrerpolicy="no-referrer">`).join('');
   return flag || clubs ? `<div class="badges">${flag}${clubs}</div>` : '';
 }
@@ -677,16 +641,34 @@ $('resetBtn').addEventListener('click', () => {
 });
 
 // --- Weergave ---
+let lastRound = null;
+
+// Nieuwe ronde: begin met een leeg zoekveld, zonder de resultaten van de vorige ronde
+function resetSearch() {
+  candidates = [];
+  lastUsedKey = '';
+  $('candidates').innerHTML = '';
+  $('searchInput').value = '';
+  $('searchContext').hidden = true;
+  $('searchError').hidden = true;
+  $('noPhotoWrap').hidden = true;
+  $('searchHint').hidden = false;
+}
+
 function render() {
   const s = state;
   const collecting = s.phase === 'collect';
+  const roundKey = s.round + ':' + s.history.length;
+  if (lastRound !== null && s.round !== Number(lastRound.split(':')[0])) resetSearch();
+  if (lastRound !== null && s.history.length === 0 && Number(lastRound.split(':')[1]) > 0) resetSearch();
+  lastRound = roundKey;
   $('roundLabel').textContent = 'Ronde ' + s.round;
 
   const active = s.players.filter((p) => p.online);
   const ready = active.filter((p) => p.submitted).length;
   $('playerMeta').textContent = collecting ? `${ready}/${active.length} klaar` : `${s.players.length} spelers`;
   $('playerList').innerHTML = s.players.map((p) => {
-    const st = collecting && p.online ? (p.submitted ? `<span class="st ok">${icon('check')}</span>` : `<span class="st wait">${icon('dots')}</span>`) : '';
+    const st = collecting && p.online && p.submitted ? '<span class="dot" title="Klaar"></span>' : '';
     return `<li class="${p.online ? '' : 'off'} ${p.you ? 'you' : ''}" title="${esc(p.name)}"><span class="avatar">${initials(p.name)}${st}</span><span class="name">${p.you ? 'Jij' : esc(p.name)}</span></li>`;
   }).join('');
 
@@ -696,7 +678,8 @@ function render() {
     $('myThumb').innerHTML = photo(s.myPick);
     $('myName').textContent = s.myPick.title;
     const waiting = s.players.filter((p) => p.online && !p.submitted).map((p) => p.name);
-    $('waitStatus').textContent = waiting.length ? 'Wachten op ' + waiting.join(', ') : 'Iedereen is klaar';
+    $('waitStatus').textContent = waiting.length ? 'Wachten op ' + waiting.join(', ') : 'Klaar om te tonen';
+    $('mySub').textContent = waiting.length ? 'De anderen zien je keuze pas bij het tonen.' : 'Iedereen heeft gekozen.';
   }
   // Alleen opnieuw tekenen als er spelers als 'al genoemd' bij komen, anders laden de foto's steeds opnieuw
   const usedKey = candidates.map((c) => usedInRound(c) || '').join(',');
@@ -718,6 +701,7 @@ function render() {
     const tick = () => { $('countNum').textContent = Math.max(1, Math.ceil((end - Date.now()) / 1000)); };
     tick();
     countdownTimer = setInterval(tick, 100);
+    $('countRound').textContent = 'Ronde ' + s.round;
   } else {
     $('countdown').hidden = true;
     clearInterval(countdownTimer);
@@ -726,24 +710,25 @@ function render() {
   // Uitslag
   $('revealSection').hidden = s.phase !== 'reveal';
   if (s.phase === 'reveal') {
-    $('revealTitle').textContent = 'Uitslag ronde ' + s.round;
-    $('revealGrid').innerHTML = s.reveal.map((p) => `<div class="card">
-      <div class="owner"><span class="avatar sm">${initials(p.player)}</span><span>${esc(p.player)}</span></div>
-      <div class="photo">${photo(p)}</div>
-      <div class="meta"><div class="name">${esc(p.title)}</div><div class="desc">${esc(p.description || '')}</div>${badges(p)}</div>
+    $('revealTitle').textContent = s.match ? 'Match' : 'Geen match';
+    $('revealTitle').classList.toggle('lime', s.match);
+    $('revealSub').textContent = s.match
+      ? `In ronde ${s.round} kwamen jullie allemaal uit op ${s.reveal[0].title}.`
+      : 'Zoek het verband en kies opnieuw.';
+    $('revealGrid').innerHTML = s.reveal.map((p) => `<div class="tcard${s.match ? ' match' : ''}">
+      ${photo(p)}
+      <span class="chip">${p.player === me ? 'Jij' : esc(p.player)}</span>
+      <div class="bottom"><div class="pname">${esc(p.title)}</div>${badges(p)}</div>
     </div>`).join('');
-    $('matchBanner').hidden = !s.match;
-    $('matchBanner').innerHTML = s.match ? `<span class="pill ok">Match</span>Iedereen koos ${esc(s.reveal[0].title)}` : '';
-    $('noMatch').hidden = s.match;
     $('nextBtn').textContent = s.match ? 'Opnieuw beginnen' : 'Volgende ronde';
   }
 
   // Eerdere rondes, nieuwste eerst (de ronde die nu getoond wordt staat er nog niet in)
   const past = s.phase === 'reveal' ? s.history.slice(0, -1) : s.history;
   $('historySection').hidden = past.length === 0;
-  $('historyList').innerHTML = past.slice().reverse().map((h) => `
-    <div class="hround">
-      <span class="lbl">Ronde ${h.round}${h.match ? '<span class="pill ok">Match</span>' : ''}</span>
+  $('historyList').innerHTML = past.slice().reverse().map((h, i) => `
+    <div class="hround${i === 0 ? ' latest' : ''}">
+      <span class="lbl">${i === 0 ? 'Vorige ronde' : 'Ronde ' + h.round}${h.match ? '<span class="m">Match</span>' : ''}</span>
       <div class="hpicks">${h.picks.map((p) => `<span class="hpick">${p.image ? `<img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">` : '<span class="ph"></span>'}<span class="htext"><span class="hname">${esc(p.title)} <small>${esc(p.player)}</small></span>${badges(p)}</span></span>`).join('')}</div>
     </div>`).join('');
 }
