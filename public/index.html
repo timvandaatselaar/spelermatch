@@ -110,7 +110,7 @@ input[type="text"]:focus { outline: none; border-color: var(--fg); }
 .join p { margin: 0 0 16px; color: var(--muted); }
 
 /* Spelers: horizontale rij avatars met status */
-.players { list-style: none; margin: 0 -14px; padding: 2px 14px; display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; }
+.players { list-style: none; margin: -4px -14px; padding: 6px 14px; display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; }
 .players::-webkit-scrollbar { display: none; }
 .players li { flex: none; width: 52px; display: grid; justify-items: center; gap: 5px; }
 .players li.off { opacity: 0.4; }
@@ -132,6 +132,19 @@ input[type="text"]:focus { outline: none; border-color: var(--fg); }
 
 /* Zoekresultaten als lijst */
 .context { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 12px 8px; margin-top: 10px; }
+@media (min-width: 600px) { .tiles { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 16px 10px; } }
+.tile { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 0; text-align: left; background: none; border: 0; cursor: pointer; }
+.tphoto { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--soft); display: grid; place-items: center; }
+.tphoto img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
+.tphoto .initials { font-size: 15px; font-weight: 500; color: var(--muted); }
+.tname { font-size: 12px; font-weight: 600; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tyear { font-size: 11px; color: var(--muted); line-height: 1; font-variant-numeric: tabular-nums; }
+.tile.used { cursor: not-allowed; }
+.tile.used .tphoto img, .tile.used .tphoto .initials, .tile.used .tname, .tile.used .tyear { opacity: 0.35; }
+.tnote { position: absolute; left: 4px; top: 4px; padding: 1px 5px; border-radius: 6px; font-size: 10px; font-weight: 600; background: var(--surface); color: var(--muted); }
+.tile:active .tphoto { transform: scale(0.97); }
+@media (hover: hover) { .tile:not(.used):hover .tname { text-decoration: underline; text-underline-offset: 2px; } }
 .list { display: grid; margin-top: 6px; }
 .item {
   display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; padding: 8px 0; text-align: left;
@@ -257,7 +270,7 @@ footer a { color: inherit; }
     <p class="hint" id="searchHint">Zoek op naam, of op club of land met een jaar.</p>
     <p class="error" id="searchError" hidden></p>
     <p class="context" id="searchContext" hidden></p>
-    <div id="candidates" class="list"></div>
+    <div id="candidates" class="tiles"></div>
     <p class="hint" id="noPhotoWrap" hidden>
       Niet gevonden? <button class="btn text" type="button" id="noPhotoBtn"></button>
     </p>
@@ -376,7 +389,7 @@ const photosFirst = (list) => list.filter((r) => r.image).concat(list.filter((r)
 
 async function wikiSearch(search, sortByLinks) {
   const params = {
-    action: 'query', generator: 'search', gsrsearch: search, gsrlimit: '8',
+    action: 'query', generator: 'search', gsrsearch: search, gsrlimit: '20',
     prop: 'pageimages|description', piprop: 'thumbnail', pithumbsize: '400', formatversion: '2',
   };
   if (sortByLinks) params.gsrsort = 'incoming_links_desc';
@@ -392,7 +405,7 @@ async function nameSearch(q) {
   if (results.length < 3) {
     for (const r of await wikiSearch(`${quoted} ${infobox}`, false)) if (!results.some((x) => x.id === r.id)) results.push(r);
   }
-  return photosFirst(results).slice(0, 8);
+  return photosFirst(results).slice(0, 20);
 }
 
 // Club of land opzoeken in Wikidata. Een land wordt het nationale elftal van dat land.
@@ -423,15 +436,19 @@ async function teamYearSearch(term, year) {
     FILTER(!BOUND(?s) || YEAR(?s) <= ${year}) FILTER(!BOUND(?e) || YEAR(?e) >= ${year})
     ?p wikibase:sitelinks ?sl .
     ?article schema:about ?p ; schema:isPartOf <https://en.wikipedia.org/> .
-  } GROUP BY ?article ORDER BY DESC(?links) LIMIT 30`;
+  } GROUP BY ?article ORDER BY DESC(?links) LIMIT 80`;
   const res = await fetch('https://query.wikidata.org/sparql?' + new URLSearchParams({ query: sparql, format: 'json' }));
   if (!res.ok) throw new Error('Zoeken lukte niet. Probeer het opnieuw.');
   const titles = (await res.json()).results.bindings.map((b) => decodeURIComponent(b.article.value.split('/wiki/')[1]).replace(/_/g, ' '));
   if (!titles.length) return { team, year, results: [] };
-  const json = await apiGet('https://en.wikipedia.org/w/api.php', { action: 'query', titles: titles.join('|'), prop: 'pageimages|description', piprop: 'thumbnail', pithumbsize: '400', formatversion: '2' });
-  const byTitle = new Map((json.query?.pages || []).filter((p) => p.pageid).map((p) => [p.title, toResult(p)]));
+  // Wikipedia accepteert maximaal 50 titels per verzoek
+  const chunks = [];
+  for (let i = 0; i < titles.length; i += 50) chunks.push(titles.slice(i, i + 50));
+  const pages = (await Promise.all(chunks.map((c) => apiGet('https://en.wikipedia.org/w/api.php', { action: 'query', titles: c.join('|'), prop: 'pageimages|description', piprop: 'thumbnail', pithumbsize: '300', formatversion: '2' }))))
+    .flatMap((json) => json.query?.pages || []);
+  const byTitle = new Map(pages.filter((p) => p.pageid).map((p) => [p.title, toResult(p)]));
   const results = titles.map((t) => byTitle.get(t)).filter(Boolean);
-  return { team, year, results: photosFirst(results).slice(0, 24) };
+  return { team, year, results: photosFirst(results).slice(0, 60) };
 }
 
 async function searchPlayers(q) {
@@ -501,14 +518,18 @@ async function fetchDetails(pageid) {
 // --- Zoekresultaten ---
 let candidates = [];
 
+let lastUsedKey = '';
+
 function renderCandidates() {
+  lastUsedKey = candidates.map((c) => usedInRound(c) || '').join(',');
   // Al genoemde spelers onderaan, zodat de kiesbare bovenaan staan
   const rows = candidates.map((c, i) => ({ c, i, round: usedInRound(c) }));
   $('candidates').innerHTML = rows.filter((r) => !r.round).concat(rows.filter((r) => r.round)).map(({ c, i, round }) => {
-    return `<button type="button" class="item cand${round ? ' used' : ''}" data-i="${i}"${round ? ' aria-disabled="true"' : ''}>
-      <span class="thumb">${photo(c)}</span>
-      <span class="text"><span class="name" style="display:block">${esc(c.title)}</span><span class="desc" style="display:block">${esc(c.description)}</span></span>
-      ${round ? `<span class="note">Ronde ${round}</span>` : `<svg class="chev"><use href="#chev"/></svg>`}
+    const born = (c.description.match(/\b(1[89]\d\d|20\d\d)\b/) || [])[1] || '';
+    return `<button type="button" class="tile cand${round ? ' used' : ''}" data-i="${i}" title="${esc(c.title)}${c.description ? ' · ' + esc(c.description) : ''}"${round ? ' aria-disabled="true"' : ''}>
+      <span class="tphoto">${photo(c)}${round ? `<span class="tnote">R${round}</span>` : ''}</span>
+      <span class="tname">${esc(c.title)}</span>
+      ${born ? `<span class="tyear">${born}</span>` : ''}
     </button>`;
   }).join('');
 }
@@ -618,7 +639,9 @@ function render() {
     const waiting = s.players.filter((p) => p.online && !p.submitted).map((p) => p.name);
     $('waitStatus').textContent = waiting.length ? 'Wachten op ' + waiting.join(', ') : 'Iedereen is klaar';
   }
-  if (collecting && !s.myPick && candidates.length) renderCandidates();
+  // Alleen opnieuw tekenen als er spelers als 'al genoemd' bij komen, anders laden de foto's steeds opnieuw
+  const usedKey = candidates.map((c) => usedInRound(c) || '').join(',');
+  if (collecting && !s.myPick && candidates.length && usedKey !== lastUsedKey) renderCandidates();
 
   // Vaste knoppen onderin
   const showReveal = collecting && s.allSubmitted;
