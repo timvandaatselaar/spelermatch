@@ -3,11 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f4f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0d0d" media="(prefers-color-scheme: dark)">
 <title>Spelermatch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap">
 <style>
-/* Panelen op een neutrale achtergrond, één kolom. Groen is alleen voor status: klaar, voortgang en match. */
+/* Mobiel eerst: één kolom met compacte panelen, acties in een vaste balk onderin. Groen alleen voor status. */
 :root {
   --bg: #f4f4f1;
   --surface: #ffffff;
@@ -16,9 +18,9 @@
   --line: #e4e4df;
   --soft: #f0f0ec;
   --accent: #17694a;
+  --accent-ink: #ffffff;
   --accent-soft: #e4f0e9;
   --shadow: 0 1px 2px rgba(20, 20, 20, 0.04), 0 6px 20px rgba(20, 20, 20, 0.04);
-  --shadow-hover: 0 2px 4px rgba(20, 20, 20, 0.06), 0 12px 28px rgba(20, 20, 20, 0.08);
   --halo: none;
   --font: "Geist", -apple-system, "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
@@ -26,75 +28,75 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0c0d0d; --surface: #161717; --fg: #f1f1ef; --muted: #8d908d; --line: #272928; --soft: #1f2120;
-    --accent: #45b583; --accent-soft: rgba(69, 181, 131, 0.14);
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --accent: #45b583; --accent-ink: #0c0d0d; --accent-soft: rgba(69, 181, 131, 0.14);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     --halo: drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.75)); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0c0d0d; --surface: #161717; --fg: #f1f1ef; --muted: #8d908d; --line: #272928; --soft: #1f2120;
-  --accent: #45b583; --accent-soft: rgba(69, 181, 131, 0.14);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --accent: #45b583; --accent-ink: #0c0d0d; --accent-soft: rgba(69, 181, 131, 0.14);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   --halo: drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.75)); color-scheme: dark;
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; }
 body {
-  background: var(--bg); color: var(--fg); font: 400 15px/1.5 var(--font);
+  background: var(--bg); color: var(--fg); font: 400 15px/1.45 var(--font);
   -webkit-font-smoothing: antialiased;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 0 56px;
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-block: 0 32px;
 }
+body.has-bar { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 img { max-width: 100%; }
 [hidden] { display: none !important; }
 button, input { font: inherit; color: inherit; }
 
-.wrap { max-width: 720px; margin: 0 auto; display: grid; gap: 16px; }
+.wrap { max-width: 640px; margin: 0 auto; display: grid; gap: 10px; }
 
 /* Bovenbalk */
-header.top { display: flex; justify-content: space-between; align-items: center; padding-block: 20px 8px; }
-.brand { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
-.mark { width: 26px; height: 26px; flex: none; }
+header.top { display: flex; justify-content: space-between; align-items: center; padding-block: 12px 2px; }
+.brand { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+.mark { width: 24px; height: 24px; flex: none; }
 .pill {
-  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px;
-  font-size: 13px; font-weight: 500; background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px;
+  font-size: 12px; font-weight: 500; background: var(--surface); border: 1px solid var(--line); color: var(--muted);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .pill.ok { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
 .pill.plain { background: var(--soft); border-color: transparent; }
 
 /* Paneel */
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 22px; }
-.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 18px; }
-.panel-head h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 14px; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.panel-head h2 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
 .panel-head .meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.sub { color: var(--muted); margin: -10px 0 18px; font-size: 14px; }
-@media (max-width: 440px) { .panel { padding: 18px; border-radius: 14px; } }
+@media (min-width: 600px) { .panel { padding: 20px; border-radius: 16px; } .wrap { gap: 14px; } header.top { padding-block: 20px 6px; } }
 
 /* Formulieren en knoppen */
 input[type="text"] {
-  width: 100%; height: 46px; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px;
-  background: var(--surface); transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%; height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); font-size: 16px; transition: border-color 0.15s ease;
 }
 input[type="text"]::placeholder { color: var(--muted); }
-input[type="text"]:focus { outline: none; border-color: var(--fg); box-shadow: 0 0 0 3px var(--soft); }
+input[type="text"]:focus { outline: none; border-color: var(--fg); }
 .search { position: relative; flex: 1; min-width: 0; }
-.search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
-.search input { padding-left: 40px; }
+.search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+.search input { padding-left: 36px; }
 
 .btn {
-  height: 46px; padding: 0 20px; border-radius: 10px; border: 1px solid transparent; cursor: pointer;
+  height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid transparent; cursor: pointer;
   background: var(--fg); color: var(--surface); font-weight: 500; white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease;
 }
-.btn:hover { opacity: 0.88; }
-.btn.secondary { background: var(--surface); color: var(--fg); border-color: var(--line); box-shadow: none; }
-.btn.secondary:hover { opacity: 1; border-color: var(--muted); }
-.btn.large { height: 52px; font-size: 16px; padding: 0 28px; }
-.btn.text { background: none; color: var(--muted); padding: 0; height: auto; font-weight: 400; box-shadow: none; border: 0; }
-.btn.text:hover { color: var(--fg); opacity: 1; }
+.btn:active { opacity: 0.8; }
+.btn.accent { background: var(--accent); color: var(--accent-ink); }
+.btn.full { width: 100%; height: 52px; font-size: 16px; }
+.btn.text { background: none; color: var(--muted); padding: 0; height: auto; font-weight: 500; border: 0; }
+.btn.text:hover { color: var(--fg); }
+.btn.small { height: 32px; padding: 0 12px; font-size: 13px; background: var(--surface); color: var(--fg); border-color: var(--line); }
 .btn:disabled { opacity: 0.4; cursor: default; }
 .btn:focus-visible, .cand:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -102,66 +104,93 @@ input[type="text"]:focus { outline: none; border-color: var(--fg); box-shadow: 0
 .row > input { flex: 1; min-width: 0; }
 
 /* Inloggen */
-.join { max-width: 400px; margin: 16vh auto 0; }
-.join .brand { margin-bottom: 24px; }
-.join h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 6px; }
-.join p { margin: 0 0 20px; color: var(--muted); }
+.join { max-width: 400px; margin: 14vh auto 0; }
+.join .brand { margin-bottom: 20px; }
+.join h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 4px; }
+.join p { margin: 0 0 16px; color: var(--muted); }
 
-/* Spelers */
-.progress { height: 4px; border-radius: 999px; background: var(--soft); overflow: hidden; margin: -6px 0 18px; }
-.progress span { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width 0.3s ease; }
-.players { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
-.players li { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px 8px 8px; border-radius: 12px; background: var(--soft); }
-.players li.off { opacity: 0.5; }
-.players .who { flex: 1; min-width: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.players .who small { font-weight: 400; color: var(--muted); }
+/* Spelers: horizontale rij avatars met status */
+.players { list-style: none; margin: 0 -14px; padding: 2px 14px; display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; }
+.players::-webkit-scrollbar { display: none; }
+.players li { flex: none; width: 52px; display: grid; justify-items: center; gap: 5px; }
+.players li.off { opacity: 0.4; }
+.players .name { max-width: 100%; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.players li.you .name { color: var(--fg); font-weight: 500; }
 .avatar {
-  width: 30px; height: 30px; border-radius: 50%; flex: none; display: grid; place-items: center;
-  background: var(--surface); border: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--muted);
+  position: relative; width: 42px; height: 42px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  background: var(--soft); font-size: 14px; font-weight: 600; color: var(--muted);
 }
-.avatar.sm { width: 22px; height: 22px; font-size: 10px; }
-
-/* Kaarten */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
-.sticker {
-  display: flex; flex-direction: column; text-align: left; padding: 0; overflow: hidden;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+.players li.you .avatar { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--fg); }
+.avatar .st {
+  position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%;
+  display: grid; place-items: center; border: 2px solid var(--surface);
 }
-.sticker .photo { aspect-ratio: 1; background: var(--soft); display: grid; place-items: center; overflow: hidden; }
-.sticker .photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
-.sticker .initials { font-size: 26px; font-weight: 300; color: var(--muted); }
-.sticker .meta { padding: 12px 14px 14px; }
-.sticker .name { font-weight: 600; line-height: 1.3; letter-spacing: -0.005em; }
-.sticker .desc { color: var(--muted); font-size: 13px; line-height: 1.35; margin-top: 3px; }
-.cand { cursor: pointer; transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease; }
-.cand:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); border-color: transparent; }
-.cand.used { cursor: not-allowed; }
-.cand.used .photo, .cand.used .name, .cand.used .desc { opacity: 0.4; }
-.cand.used:hover { box-shadow: none; transform: none; border-color: var(--line); }
-.used-note { margin-top: 10px; font-size: 12px; font-weight: 500; color: var(--muted); }
-.owner { display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--line); }
-.results { margin-top: 20px; }
+.avatar .st svg { width: 10px; height: 10px; }
+.avatar .st.ok { background: var(--accent); color: var(--accent-ink); }
+.avatar .st.wait { background: var(--line); color: var(--muted); }
+.avatar.sm { width: 18px; height: 18px; font-size: 9px; }
 
-.badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.badges .flag { height: 12px; width: auto; border-radius: 2px; box-shadow: 0 0 0 1px var(--line); }
-.badges .club { height: 18px; width: 18px; object-fit: contain; filter: var(--halo); }
+/* Zoekresultaten als lijst */
+.context { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.list { display: grid; margin-top: 6px; }
+.item {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; padding: 8px 0; text-align: left;
+  background: none; border: 0; border-top: 1px solid var(--line); cursor: pointer;
+}
+.list .item:first-child { border-top: 0; }
+.thumb { width: 48px; height: 48px; border-radius: 10px; overflow: hidden; flex: none; background: var(--soft); display: grid; place-items: center; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
+.thumb .initials { font-size: 15px; font-weight: 500; color: var(--muted); }
+.item .text { flex: 1; min-width: 0; }
+.item .name { font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .desc { color: var(--muted); font-size: 13px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .chev { color: var(--muted); flex: none; width: 16px; height: 16px; }
+.item.used { cursor: not-allowed; }
+.item.used .thumb, .item.used .text { opacity: 0.4; }
+.item .note { flex: none; font-size: 12px; color: var(--muted); }
+.item.busy { opacity: 0.5; }
+@media (hover: hover) { .item:not(.used):hover .name { text-decoration: underline; text-underline-offset: 3px; } }
 
-.mine { display: grid; grid-template-columns: 160px 1fr; gap: 22px; align-items: center; }
-.mine-side { display: grid; gap: 14px; justify-items: start; }
-@media (max-width: 440px) { .mine { grid-template-columns: 120px 1fr; gap: 16px; } }
+.error { color: var(--fg); margin: 10px 0 0; font-size: 14px; }
+.hint { color: var(--muted); margin: 10px 0 0; font-size: 13px; }
+.loading { color: var(--muted); margin: 14px 0 4px; font-size: 14px; }
 
-.status { margin: 0; }
-.status-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.error { color: var(--fg); margin: 12px 0 0; font-size: 14px; }
-.hint { color: var(--muted); margin: 16px 0 0; font-size: 14px; }
+/* Jouw keuze */
+.mine { display: flex; align-items: center; gap: 12px; }
+.mine .thumb { width: 56px; height: 56px; }
+.mine .text { flex: 1; min-width: 0; }
+.mine .name { font-weight: 600; }
+.mine .status { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
 
-.reveal-cta { display: grid; justify-items: center; gap: 6px; text-align: center; padding-block: 28px; }
-.reveal-cta h2 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
-.reveal-cta p { margin: 0 0 14px; color: var(--muted); }
+/* Uitslag */
+.verdict { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; font-size: 15px; font-weight: 500; }
+.verdict .rest { color: var(--muted); font-weight: 400; font-size: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 8px; }
+@media (min-width: 600px) { .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; } }
+.card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.card .owner { display: flex; align-items: center; gap: 6px; padding: 7px 8px; font-size: 12px; font-weight: 500; border-bottom: 1px solid var(--line); min-width: 0; }
+.card .owner span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card .photo { aspect-ratio: 1; background: var(--soft); display: grid; place-items: center; overflow: hidden; }
+.card .photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
+.card .photo .initials { font-size: 22px; font-weight: 300; color: var(--muted); }
+.card .meta { padding: 8px; flex: 1; display: flex; flex-direction: column; }
+.card .name { font-size: 13px; font-weight: 600; line-height: 1.25; }
+.card .desc { display: none; color: var(--muted); font-size: 12px; line-height: 1.3; margin-top: 2px; }
+@media (min-width: 600px) { .card .meta { padding: 10px 12px 12px; } .card .name { font-size: 14px; } .card .desc { display: block; } .card .owner { padding: 8px 12px; font-size: 13px; } }
+.badges { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: auto; padding-top: 8px; }
+.badges .flag { height: 10px; width: auto; border-radius: 2px; box-shadow: 0 0 0 1px var(--line); }
+.badges .club { height: 15px; width: 15px; object-fit: contain; filter: var(--halo); }
+@media (min-width: 600px) { .badges { gap: 7px; } .badges .flag { height: 12px; } .badges .club { height: 18px; width: 18px; } }
 
-.verdict { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 20px; font-size: 18px; font-weight: 500; letter-spacing: -0.01em; }
-.verdict span.rest { color: var(--muted); font-weight: 400; font-size: 15px; }
-.actions { margin-top: 20px; display: flex; justify-content: flex-end; }
+/* Vaste actiebalk onderin */
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  padding: 12px max(12px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+}
+.bar-inner { max-width: 640px; margin: 0 auto; display: grid; gap: 6px; }
+.bar-note { margin: 0; text-align: center; font-size: 12px; color: var(--muted); }
 
 /* Aftellen */
 .countdown { position: fixed; inset: 0; background: var(--bg); display: grid; place-items: center; z-index: 20; }
@@ -169,25 +198,28 @@ input[type="text"]:focus { outline: none; border-color: var(--fg); box-shadow: 0
 @keyframes fade { from { opacity: 0.15; } 40% { opacity: 1; } }
 
 /* Eerdere rondes */
-.history { display: grid; }
-.hround { display: grid; grid-template-columns: 96px 1fr; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+.hround { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
 .hround:first-child { border-top: 0; padding-top: 0; }
-.hround .lbl { display: grid; gap: 6px; justify-items: start; color: var(--muted); font-size: 13px; padding-top: 3px; font-variant-numeric: tabular-nums; }
-.hpicks { display: grid; gap: 8px; min-width: 0; }
-.hpick { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.hpick img, .hpick .ph { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: var(--soft); flex: none; }
+.hround .lbl { display: grid; gap: 4px; justify-items: start; color: var(--muted); font-size: 13px; padding-top: 2px; font-variant-numeric: tabular-nums; }
+.hpicks { display: grid; gap: 6px; min-width: 0; }
+.hpick { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; }
+.hpick > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hpick img, .hpick .ph { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: var(--soft); flex: none; }
 .hpick small { color: var(--muted); }
 
-footer { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; padding: 8px 4px 0; }
+footer { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; padding: 6px 2px 0; }
 footer a { color: inherit; }
 
-@media (prefers-reduced-motion: reduce) { .countdown span { animation: none; } .cand, .progress span, input, .btn { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .countdown span { animation: none; } input, .btn { transition: none; } }
 </style>
 </head>
 <body>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="mark" viewBox="0 0 26 26"><rect width="26" height="26" rx="7" style="fill:var(--fg)"/><circle cx="10.5" cy="13" r="5" fill="none" stroke-width="1.8" style="stroke:var(--surface)"/><circle cx="15.5" cy="13" r="5" fill="none" stroke-width="1.8" style="stroke:var(--accent)"/></symbol>
+  <symbol id="check" viewBox="0 0 10 10"><path d="M2 5.2l2 2 4-4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="dots" viewBox="0 0 10 10"><circle cx="2" cy="5" r="1" fill="currentColor"/><circle cx="5" cy="5" r="1" fill="currentColor"/><circle cx="8" cy="5" r="1" fill="currentColor"/></symbol>
+  <symbol id="chev" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
 <section class="join" id="joinView">
@@ -210,42 +242,36 @@ footer a { color: inherit; }
 
   <section class="panel">
     <div class="panel-head"><h2>Spelers</h2><span class="meta" id="playerMeta"></span></div>
-    <div class="progress" id="progressWrap"><span id="progressBar" style="width:0"></span></div>
     <ul class="players" id="playerList"></ul>
   </section>
 
   <section class="panel" id="pickSection">
     <div class="panel-head"><h2>Kies je speler</h2></div>
-    <p class="sub">De anderen zien je keuze pas bij het tonen.</p>
     <form id="searchForm" class="row">
       <div class="search">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5" stroke-linecap="round"/></svg>
-        <input type="text" id="searchInput" placeholder="Bijvoorbeeld Henry" maxlength="60" autocomplete="off">
+        <input type="text" id="searchInput" placeholder="Henry, of juventus 2005" maxlength="60" autocomplete="off" enterkeyhint="search">
       </div>
       <button class="btn" type="submit" id="searchBtn">Zoek</button>
     </form>
+    <p class="hint" id="searchHint">Zoek op naam, of op club of land met een jaar.</p>
     <p class="error" id="searchError" hidden></p>
-    <div id="candidates" class="grid results"></div>
+    <p class="context" id="searchContext" hidden></p>
+    <div id="candidates" class="list"></div>
     <p class="hint" id="noPhotoWrap" hidden>
       Niet gevonden? <button class="btn text" type="button" id="noPhotoBtn"></button>
     </p>
   </section>
 
   <section class="panel" id="mySection" hidden>
-    <div class="panel-head"><h2>Jouw keuze</h2></div>
     <div class="mine">
-      <div id="myCard"></div>
-      <div class="mine-side">
+      <div id="myThumb" class="thumb"></div>
+      <div class="text">
+        <div class="name" id="myName"></div>
         <p class="status" id="waitStatus"></p>
-        <button class="btn secondary" type="button" id="changeBtn">Wijzigen</button>
       </div>
+      <button class="btn small" type="button" id="changeBtn">Wijzig</button>
     </div>
-  </section>
-
-  <section class="panel reveal-cta" id="revealCta" hidden>
-    <h2>Iedereen heeft gekozen</h2>
-    <p>Tel samen af en bekijk alle keuzes tegelijk.</p>
-    <button class="btn large" type="button" id="revealBtn">Aftellen en tonen</button>
   </section>
 
   <section class="panel" id="revealSection" hidden>
@@ -253,14 +279,11 @@ footer a { color: inherit; }
     <p class="verdict" id="matchBanner" hidden></p>
     <p class="verdict" id="noMatch" hidden><span class="pill plain">Geen match</span><span class="rest">Zoek het verband en kies opnieuw.</span></p>
     <div id="revealGrid" class="grid"></div>
-    <div class="actions">
-      <button class="btn" type="button" id="nextBtn">Volgende ronde</button>
-    </div>
   </section>
 
   <section class="panel" id="historySection" hidden>
     <div class="panel-head"><h2>Eerdere rondes</h2></div>
-    <div class="history" id="historyList"></div>
+    <div id="historyList"></div>
   </section>
 
   <footer>
@@ -268,6 +291,18 @@ footer a { color: inherit; }
     <button class="btn text" type="button" id="resetBtn">Nieuw spel</button>
   </footer>
 </main>
+
+<div class="bar" id="revealBar" hidden>
+  <div class="bar-inner">
+    <button class="btn full accent" type="button" id="revealBtn">Aftellen en tonen</button>
+    <p class="bar-note">Iedereen heeft gekozen</p>
+  </div>
+</div>
+<div class="bar" id="nextBar" hidden>
+  <div class="bar-inner">
+    <button class="btn full" type="button" id="nextBtn">Volgende ronde</button>
+  </div>
+</div>
 
 <div class="countdown" id="countdown" hidden><span id="countNum">3</span></div>
 
@@ -281,10 +316,10 @@ let countdownTimer = null;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initials = (t) => esc(String(t).replace(/\(.*?\)/g, '').split(/\s+/).filter((w) => /^\p{L}/u.test(w)).map((w) => w[0]).join('').slice(0, 2).toUpperCase());
+const icon = (id) => `<svg><use href="#${id}"/></svg>`;
 
-function sticker(p, extra = '') {
-  const photo = p.image ? `<img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy" referrerpolicy="no-referrer">` : `<span class="initials">${initials(p.title)}</span>`;
-  return `<div class="photo">${photo}</div><div class="meta"><div class="name">${esc(p.title)}</div><div class="desc">${esc(p.description || '')}</div>${extra}</div>`;
+function photo(p) {
+  return p.image ? `<img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy" referrerpolicy="no-referrer">` : `<span class="initials">${initials(p.title)}</span>`;
 }
 
 // Vlag en clublogo's, klein onder de naam
@@ -325,49 +360,99 @@ $('logoutLink').addEventListener('click', (e) => {
   location.reload();
 });
 
-// --- Zoeken en kiezen ---
-// De browser zoekt zelf op Wikipedia: een gedeelde server-IP wordt door Wikipedia snel geblokkeerd.
+// --- Zoeken ---
+// De browser zoekt zelf bij Wikipedia en Wikidata: een gedeelde server-IP wordt daar snel geblokkeerd.
 const searchCache = new Map();
 
-async function wikiSearch(search, sortByLinks) {
-  const params = new URLSearchParams({
-    action: 'query', generator: 'search', gsrsearch: search, gsrlimit: '8',
-    prop: 'pageimages|description', piprop: 'thumbnail', pithumbsize: '500',
-    format: 'json', formatversion: '2', origin: '*',
-  });
-  if (sortByLinks) params.set('gsrsort', 'incoming_links_desc');
-  const res = await fetch('https://en.wikipedia.org/w/api.php?' + params);
+async function apiGet(base, params) {
+  const res = await fetch(base + '?' + new URLSearchParams({ format: 'json', origin: '*', ...params }));
   if (res.status === 429) throw new Error('Wikipedia is even druk. Probeer het over een halve minuut opnieuw.');
   if (!res.ok) throw new Error('Zoeken lukte niet. Probeer het opnieuw.');
-  const json = await res.json();
-  return (json.query?.pages || [])
-    .sort((a, b) => a.index - b.index)
-    .map((p) => ({ id: p.pageid, title: p.title.replace(/ \((footballer|soccer)[^)]*\)$/, ''), description: p.description || '', image: p.thumbnail?.source || null }));
+  return res.json();
+}
+
+const toResult = (p) => ({ id: p.pageid, title: p.title.replace(/ \([^)]*(footballer|soccer|football)[^)]*\)$/, ''), description: p.description || '', image: p.thumbnail?.source || null });
+const photosFirst = (list) => list.filter((r) => r.image).concat(list.filter((r) => !r.image));
+
+async function wikiSearch(search, sortByLinks) {
+  const params = {
+    action: 'query', generator: 'search', gsrsearch: search, gsrlimit: '8',
+    prop: 'pageimages|description', piprop: 'thumbnail', pithumbsize: '400', formatversion: '2',
+  };
+  if (sortByLinks) params.gsrsort = 'incoming_links_desc';
+  const json = await apiGet('https://en.wikipedia.org/w/api.php', params);
+  return (json.query?.pages || []).sort((a, b) => a.index - b.index).map(toResult);
+}
+
+async function nameSearch(q) {
+  const infobox = 'hastemplate:"Infobox football biography"';
+  const quoted = q.replace(/"/g, '');
+  // Eerst op naam in de titel, gesorteerd op bekendheid (aantal links), daarna breder zoeken.
+  const results = await wikiSearch(`intitle:"${quoted}" ${infobox}`, true);
+  if (results.length < 3) {
+    for (const r of await wikiSearch(`${quoted} ${infobox}`, false)) if (!results.some((x) => x.id === r.id)) results.push(r);
+  }
+  return photosFirst(results).slice(0, 8);
+}
+
+// Club of land opzoeken in Wikidata. Een land wordt het nationale elftal van dat land.
+async function findTeam(term) {
+  const hits = (await apiGet('https://www.wikidata.org/w/api.php', { action: 'wbsearchentities', search: term, language: 'nl', uselang: 'en', type: 'item', limit: '7' })).search || [];
+  for (const h of hits) {
+    const d = (h.description || '').toLowerCase();
+    if (/women|youth|under-\d|reserve/.test(d)) continue;
+    if (/football club|association football (club|team)|soccer (club|team)|national football team/.test(d)) return { id: h.id, label: h.label };
+    if (/\b(country|sovereign state)\b/.test(d)) {
+      const title = `${h.label} national football team`;
+      const wp = await apiGet('https://en.wikipedia.org/w/api.php', { action: 'query', titles: title, redirects: '1', prop: 'pageprops', ppprop: 'wikibase_item', formatversion: '2' });
+      const id = wp.query?.pages?.[0]?.pageprops?.wikibase_item;
+      if (id) return { id, label: h.label };
+    }
+  }
+  return null;
+}
+
+// Spelers die in dat jaar bij die club of dat land speelden, bekendste eerst (aantal Wikipedia-talen)
+async function teamYearSearch(term, year) {
+  const team = await findTeam(term);
+  if (!team) return null;
+  const sparql = `SELECT ?article (MAX(?sl) AS ?links) WHERE {
+    ?p p:P54 ?st . ?st ps:P54 wd:${team.id} .
+    OPTIONAL { ?st pq:P580 ?s } OPTIONAL { ?st pq:P582 ?e }
+    FILTER(BOUND(?s) || BOUND(?e))
+    FILTER(!BOUND(?s) || YEAR(?s) <= ${year}) FILTER(!BOUND(?e) || YEAR(?e) >= ${year})
+    ?p wikibase:sitelinks ?sl .
+    ?article schema:about ?p ; schema:isPartOf <https://en.wikipedia.org/> .
+  } GROUP BY ?article ORDER BY DESC(?links) LIMIT 30`;
+  const res = await fetch('https://query.wikidata.org/sparql?' + new URLSearchParams({ query: sparql, format: 'json' }));
+  if (!res.ok) throw new Error('Zoeken lukte niet. Probeer het opnieuw.');
+  const titles = (await res.json()).results.bindings.map((b) => decodeURIComponent(b.article.value.split('/wiki/')[1]).replace(/_/g, ' '));
+  if (!titles.length) return { team, year, results: [] };
+  const json = await apiGet('https://en.wikipedia.org/w/api.php', { action: 'query', titles: titles.join('|'), prop: 'pageimages|description', piprop: 'thumbnail', pithumbsize: '400', formatversion: '2' });
+  const byTitle = new Map((json.query?.pages || []).filter((p) => p.pageid).map((p) => [p.title, toResult(p)]));
+  const results = titles.map((t) => byTitle.get(t)).filter(Boolean);
+  return { team, year, results: photosFirst(results).slice(0, 24) };
 }
 
 async function searchPlayers(q) {
   const cacheKey = q.toLowerCase();
   if (searchCache.has(cacheKey)) return searchCache.get(cacheKey);
-  const infobox = 'hastemplate:"Infobox football biography"';
-  const quoted = q.replace(/"/g, '');
-  // Eerst op naam in de titel, gesorteerd op bekendheid (aantal links), daarna breder zoeken.
-  let results = await wikiSearch(`intitle:"${quoted}" ${infobox}`, true);
-  if (results.length < 3) {
-    const more = await wikiSearch(`${quoted} ${infobox}`, false);
-    for (const r of more) if (!results.some((x) => x.id === r.id)) results.push(r);
+  // "juventus 2005" of "2005 juventus": club of land met een jaar
+  let term = null, year = null, m;
+  if ((m = q.match(/^(.+?)\s+((?:18|19|20)\d\d)$/))) [term, year] = [m[1], m[2]];
+  else if ((m = q.match(/^((?:18|19|20)\d\d)\s+(.+)$/))) [year, term] = [m[1], m[2]];
+  let out = null;
+  if (term) {
+    const found = await teamYearSearch(term.trim(), Number(year));
+    const cap = (t) => t.trim().replace(/^\p{L}/u, (c) => c.toUpperCase());
+    if (found) out = { context: `${cap(term)} in ${year}`, results: found.results };
   }
-  results = results.filter((r) => r.image).concat(results.filter((r) => !r.image)).slice(0, 8);
-  searchCache.set(cacheKey, results);
-  return results;
+  if (!out) out = { context: '', results: await nameSearch(q) };
+  searchCache.set(cacheKey, out);
+  return out;
 }
 
-// Land en clubs van een speler: Wikidata voor de feiten, Wikipedia voor de clublogo's.
-async function apiGet(base, params) {
-  const res = await fetch(base + '?' + new URLSearchParams({ format: 'json', origin: '*', ...params }));
-  if (!res.ok) throw new Error('details ' + res.status);
-  return res.json();
-}
-
+// --- Land en clubs van een speler: Wikidata voor de feiten, Wikipedia voor de clublogo's ---
 const claimId = (c) => c.mainsnak?.datavalue?.value?.id;
 const hasEnd = (c) => !!c.qualifiers?.P582;
 
@@ -413,27 +498,42 @@ async function fetchDetails(pageid) {
   return { country, clubs: clubs.map((c) => ({ name: c.name, logo: logos[c.wiki] || null })) };
 }
 
-const withTimeout = (promise, ms) => Promise.race([promise, new Promise((resolve) => setTimeout(() => resolve({}), ms))]);
-
+// --- Zoekresultaten ---
 let candidates = [];
+
+function renderCandidates() {
+  // Al genoemde spelers onderaan, zodat de kiesbare bovenaan staan
+  const rows = candidates.map((c, i) => ({ c, i, round: usedInRound(c) }));
+  $('candidates').innerHTML = rows.filter((r) => !r.round).concat(rows.filter((r) => r.round)).map(({ c, i, round }) => {
+    return `<button type="button" class="item cand${round ? ' used' : ''}" data-i="${i}"${round ? ' aria-disabled="true"' : ''}>
+      <span class="thumb">${photo(c)}</span>
+      <span class="text"><span class="name" style="display:block">${esc(c.title)}</span><span class="desc" style="display:block">${esc(c.description)}</span></span>
+      ${round ? `<span class="note">Ronde ${round}</span>` : `<svg class="chev"><use href="#chev"/></svg>`}
+    </button>`;
+  }).join('');
+}
+
 $('searchForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const q = $('searchInput').value.trim();
   if (q.length < 2) return;
   lastQuery = q;
+  $('searchInput').blur();
   $('searchBtn').disabled = true;
   $('searchError').hidden = true;
-  $('candidates').innerHTML = '<p class="hint">Zoeken...</p>';
+  $('searchHint').hidden = true;
+  $('searchContext').hidden = true;
+  $('noPhotoWrap').hidden = true;
+  $('candidates').innerHTML = '<p class="loading">Zoeken...</p>';
   try {
-    candidates = await searchPlayers(q);
-    $('candidates').innerHTML = candidates.length
-      ? candidates.map((c, i) => {
-          const round = usedInRound(c);
-          return round
-            ? `<button type="button" class="sticker cand used" data-i="${i}" aria-disabled="true">${sticker(c, `<div class="used-note">Al genoemd in ronde ${round}</div>`)}</button>`
-            : `<button type="button" class="sticker cand" data-i="${i}">${sticker(c)}</button>`;
-        }).join('')
-      : '<p class="hint">Geen voetballer gevonden met deze naam.</p>';
+    const { context, results } = await searchPlayers(q);
+    candidates = results;
+    if (context) {
+      $('searchContext').textContent = results.length ? `${context} · ${results.length} spelers` : `Geen spelers gevonden voor ${context}.`;
+      $('searchContext').hidden = false;
+    }
+    if (results.length) renderCandidates();
+    else $('candidates').innerHTML = context ? '' : '<p class="hint">Geen voetballer gevonden met deze naam.</p>';
   } catch (err) {
     $('candidates').innerHTML = '';
     $('searchError').textContent = err.message;
@@ -458,6 +558,7 @@ function usedInRound(pick) {
   return h ? h.round : null;
 }
 
+// Kiezen gaat direct; vlag en clubs worden daarna opgehaald en nagestuurd.
 async function choose(pick) {
   const round = usedInRound(pick);
   if (round) {
@@ -465,22 +566,22 @@ async function choose(pick) {
     $('searchError').hidden = false;
     return;
   }
-  $('candidates').style.opacity = '0.4';
-  $('candidates').style.pointerEvents = 'none';
-  let details = {};
-  try { if (typeof pick.id === 'number') details = await withTimeout(fetchDetails(pick.id), 5000); } catch {}
-  $('candidates').style.opacity = '';
-  $('candidates').style.pointerEvents = '';
-  const res = await post('pick', { pick: { ...pick, ...details } });
+  const res = await post('pick', { pick });
   if (res.error) { $('searchError').textContent = res.error; $('searchError').hidden = false; return; }
   $('candidates').innerHTML = '';
   $('searchInput').value = '';
+  $('searchContext').hidden = true;
   $('noPhotoWrap').hidden = true;
+  $('searchHint').hidden = false;
+  window.scrollTo({ top: 0 });
+  if (typeof pick.id === 'number') {
+    fetchDetails(pick.id).then((d) => { if (d.country || d.clubs?.length) post('details', { id: pick.id, ...d }); }).catch(() => {});
+  }
 }
 
 $('changeBtn').addEventListener('click', () => post('unpick'));
 $('revealBtn').addEventListener('click', () => { $('revealBtn').disabled = true; post('reveal'); });
-$('nextBtn').addEventListener('click', () => post('next'));
+$('nextBtn').addEventListener('click', () => { window.scrollTo({ top: 0 }); post('next'); });
 
 let resetArmed = false;
 $('resetBtn').addEventListener('click', () => {
@@ -498,30 +599,34 @@ $('resetBtn').addEventListener('click', () => {
 // --- Weergave ---
 function render() {
   const s = state;
+  const collecting = s.phase === 'collect';
   $('roundLabel').textContent = 'Ronde ' + s.round;
 
   const active = s.players.filter((p) => p.online);
   const ready = active.filter((p) => p.submitted).length;
-  const collectingNow = s.phase === 'collect';
-  $('playerMeta').textContent = collectingNow ? `${ready} van ${active.length} klaar` : `${s.players.length} spelers`;
-  $('progressWrap').hidden = !collectingNow;
-  $('progressBar').style.width = active.length ? (ready / active.length) * 100 + '%' : '0';
+  $('playerMeta').textContent = collecting ? `${ready}/${active.length} klaar` : `${s.players.length} spelers`;
   $('playerList').innerHTML = s.players.map((p) => {
-    const status = !p.online ? '<span class="pill plain">Weg</span>'
-      : collectingNow ? (p.submitted ? '<span class="pill ok">Klaar</span>' : '<span class="pill plain">Kiest</span>') : '';
-    return `<li class="${p.online ? '' : 'off'}"><span class="avatar">${initials(p.name)}</span><span class="who">${esc(p.name)}${p.you ? ' <small>jij</small>' : ''}</span>${status}</li>`;
+    const st = collecting && p.online ? (p.submitted ? `<span class="st ok">${icon('check')}</span>` : `<span class="st wait">${icon('dots')}</span>`) : '';
+    return `<li class="${p.online ? '' : 'off'} ${p.you ? 'you' : ''}" title="${esc(p.name)}"><span class="avatar">${initials(p.name)}${st}</span><span class="name">${p.you ? 'Jij' : esc(p.name)}</span></li>`;
   }).join('');
 
-  const collecting = s.phase === 'collect';
   $('pickSection').hidden = !collecting || !!s.myPick;
   $('mySection').hidden = !collecting || !s.myPick;
   if (s.myPick) {
-    $('myCard').innerHTML = `<div class="sticker">${sticker(s.myPick)}</div>`;
+    $('myThumb').innerHTML = photo(s.myPick);
+    $('myName').textContent = s.myPick.title;
     const waiting = s.players.filter((p) => p.online && !p.submitted).map((p) => p.name);
     $('waitStatus').textContent = waiting.length ? 'Wachten op ' + waiting.join(', ') : 'Iedereen is klaar';
   }
-  $('revealCta').hidden = !(collecting && s.allSubmitted);
+  if (collecting && !s.myPick && candidates.length) renderCandidates();
+
+  // Vaste knoppen onderin
+  const showReveal = collecting && s.allSubmitted;
+  const showNext = s.phase === 'reveal';
+  $('revealBar').hidden = !showReveal;
+  $('nextBar').hidden = !showNext;
   $('revealBtn').disabled = false;
+  document.body.classList.toggle('has-bar', showReveal || showNext);
 
   // Aftellen
   if (s.phase === 'countdown') {
@@ -536,18 +641,22 @@ function render() {
     clearInterval(countdownTimer);
   }
 
-  // Onthulling
+  // Uitslag
   $('revealSection').hidden = s.phase !== 'reveal';
   if (s.phase === 'reveal') {
     $('revealTitle').textContent = 'Uitslag ronde ' + s.round;
-    $('revealGrid').innerHTML = s.reveal.map((p) => `<div class="sticker"><div class="owner"><span class="avatar sm">${initials(p.player)}</span>${esc(p.player)}</div>${sticker(p, badges(p))}</div>`).join('');
+    $('revealGrid').innerHTML = s.reveal.map((p) => `<div class="card">
+      <div class="owner"><span class="avatar sm">${initials(p.player)}</span><span>${esc(p.player)}</span></div>
+      <div class="photo">${photo(p)}</div>
+      <div class="meta"><div class="name">${esc(p.title)}</div><div class="desc">${esc(p.description || '')}</div>${badges(p)}</div>
+    </div>`).join('');
     $('matchBanner').hidden = !s.match;
     $('matchBanner').innerHTML = s.match ? `<span class="pill ok">Match</span>Iedereen koos ${esc(s.reveal[0].title)}` : '';
     $('noMatch').hidden = s.match;
     $('nextBtn').textContent = s.match ? 'Opnieuw beginnen' : 'Volgende ronde';
   }
 
-  // Geschiedenis (de ronde die nu onthuld staat zit er al in en wordt niet dubbel getoond)
+  // Eerdere rondes, nieuwste eerst (de ronde die nu getoond wordt staat er nog niet in)
   const past = s.phase === 'reveal' ? s.history.slice(0, -1) : s.history;
   $('historySection').hidden = past.length === 0;
   $('historyList').innerHTML = past.slice().reverse().map((h) => `

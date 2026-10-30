@@ -169,6 +169,12 @@ const server = http.createServer(async (req, res) => {
       const earlier = game.history.find((h) => h.picks.some((p) => samePlayer(p, pick)));
       if (earlier) return sendJson(res, 409, { error: `${pick.title} is al genoemd in ronde ${earlier.round}. Kies een andere speler.` });
       game.picks[key] = pick;
+    } else if (action === 'details') {
+      // Vlag en clubs komen na het insturen binnen, zodat kiezen direct gaat.
+      const extra = cleanPick({ title: 'details', country: body.country, clubs: body.clubs });
+      const id = Number(body.id);
+      const targets = [game.picks[key], ...(game.history.at(-1)?.picks || []).filter((p) => keyOf(p.player) === key)];
+      for (const t of targets) if (t && t.id === id) Object.assign(t, { country: extra.country, clubs: extra.clubs });
     } else if (action === 'unpick') {
       if (game.phase === 'collect') delete game.picks[key];
     } else if (action === 'reveal') {
