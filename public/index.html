@@ -355,13 +355,13 @@ async function apiGet(base, params) {
   return res.json();
 }
 
-const toResult = (p) => ({ id: p.pageid, title: p.title.replace(/ \([^)]*(footballer|soccer|football)[^)]*\)$/, ''), description: p.description || '', image: p.thumbnail?.source || null });
+const toResult = (p) => ({ id: p.pageid, qid: p.pageprops?.wikibase_item || null, title: p.title.replace(/ \([^)]*(footballer|soccer|football)[^)]*\)$/, ''), description: p.description || '', image: p.thumbnail?.source || null });
 const photosFirst = (list) => list.filter((r) => r.image).concat(list.filter((r) => !r.image));
 
 async function wikiSearch(search, sortByLinks) {
   const params = {
     action: 'query', generator: 'search', gsrsearch: search, gsrlimit: '20',
-    prop: 'pageimages|description', piprop: 'thumbnail', pithumbsize: '400', formatversion: '2',
+    prop: 'pageimages|description|pageprops', ppprop: 'wikibase_item', piprop: 'thumbnail', pithumbsize: '400', formatversion: '2',
   };
   if (sortByLinks) params.gsrsort = 'incoming_links_desc';
   const json = await apiGet('https://en.wikipedia.org/w/api.php', params);
@@ -376,7 +376,22 @@ async function nameSearch(q) {
   if (results.length < 3) {
     for (const r of await wikiSearch(`${quoted} ${infobox}`, false)) if (!results.some((x) => x.id === r.id)) results.push(r);
   }
-  return photosFirst(results).slice(0, 20);
+  return photosFirst(await withoutWomen(results)).slice(0, 20);
+}
+
+// Alleen mannelijke spelers: haal speelsters eruit via Wikidata (geslacht = vrouw)
+async function withoutWomen(results) {
+  const byDescription = results.filter((r) => !/\b(women|woman|female)\b/i.test(r.description));
+  const qids = byDescription.map((r) => r.qid).filter(Boolean);
+  if (!qids.length) return byDescription;
+  try {
+    const sparql = `SELECT ?p WHERE { VALUES ?p { ${qids.map((q) => 'wd:' + q).join(' ')} } ?p wdt:P21 ?g . FILTER(?g IN (wd:Q6581072, wd:Q1052281)) }`;
+    const res = await fetch('https://query.wikidata.org/sparql?' + new URLSearchParams({ query: sparql, format: 'json' }));
+    const women = new Set((await res.json()).results.bindings.map((b) => b.p.value.split('/').pop()));
+    return byDescription.filter((r) => !women.has(r.qid));
+  } catch {
+    return byDescription;
+  }
 }
 
 // Club of land opzoeken in Wikidata. Een land wordt het nationale elftal van dat land.
