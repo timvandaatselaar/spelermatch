@@ -139,7 +139,10 @@ input[type="text"]:focus { outline: none; border-color: var(--fg); }
 .tphoto img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
 .tphoto .initials { font-size: 15px; font-weight: 500; color: var(--muted); }
 .tname { font-size: 12px; font-weight: 600; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tline { display: flex; align-items: center; gap: 5px; min-height: 14px; }
 .tyear { font-size: 11px; color: var(--muted); line-height: 1; font-variant-numeric: tabular-nums; }
+.tpos { font-size: 9px; font-weight: 600; line-height: 1; padding: 2px 4px; border-radius: 4px; background: var(--soft); color: var(--muted); letter-spacing: 0.02em; }
+.tpos:empty { display: none; }
 .tile.used { cursor: not-allowed; }
 .tile.used .tphoto img, .tile.used .tphoto .initials, .tile.used .tname, .tile.used .tyear { opacity: 0.35; }
 .tnote { position: absolute; left: 4px; top: 4px; padding: 1px 5px; border-radius: 6px; font-size: 10px; font-weight: 600; background: var(--surface); color: var(--muted); }
@@ -214,11 +217,15 @@ input[type="text"]:focus { outline: none; border-color: var(--fg); }
 .hround { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
 .hround:first-child { border-top: 0; padding-top: 0; }
 .hround .lbl { display: grid; gap: 4px; justify-items: start; color: var(--muted); font-size: 13px; padding-top: 2px; font-variant-numeric: tabular-nums; }
-.hpicks { display: grid; gap: 6px; min-width: 0; }
-.hpick { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; }
-.hpick > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hpick img, .hpick .ph { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: var(--soft); flex: none; }
+.hpicks { display: grid; gap: 10px; min-width: 0; }
+.hpick { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; }
+.hpick > img, .hpick > .ph { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: var(--soft); flex: none; }
+.hpick .htext { min-width: 0; flex: 1; }
+.hpick .hname { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; }
 .hpick small { color: var(--muted); }
+.hpick .badges { padding-top: 3px; gap: 4px; }
+.hpick .badges .flag { height: 9px; }
+.hpick .badges .club { height: 13px; width: 13px; }
 
 footer { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; padding: 6px 2px 0; }
 footer a { color: inherit; }
@@ -434,6 +441,7 @@ async function teamYearSearch(term, year) {
     OPTIONAL { ?st pq:P580 ?s } OPTIONAL { ?st pq:P582 ?e }
     FILTER(BOUND(?s) || BOUND(?e))
     FILTER(!BOUND(?s) || YEAR(?s) <= ${year}) FILTER(!BOUND(?e) || YEAR(?e) >= ${year})
+    ?p wdt:P21 wd:Q6581097 .
     ?p wikibase:sitelinks ?sl .
     ?article schema:about ?p ; schema:isPartOf <https://en.wikipedia.org/> .
   } GROUP BY ?article ORDER BY DESC(?links) LIMIT 80`;
@@ -518,6 +526,56 @@ async function fetchDetails(pageid) {
 // --- Zoekresultaten ---
 let candidates = [];
 
+// --- Posities (Wikidata 'positie op het veld'), als lettercode naast het geboortejaar ---
+const POSITIONS = [
+  [/goalkeeper/i, 'K', 'Keeper'],
+  [/back|defender|sweeper|libero/i, 'V', 'Verdediger'],
+  [/midfield|playmaker/i, 'M', 'Middenvelder'],
+  [/forward|striker|wing|attack|centre-forward/i, 'A', 'Aanvaller'],
+];
+const positionCache = new Map(); // pageid -> { code, label } of null
+
+const posTag = (id) => {
+  const p = positionCache.get(id);
+  return `<span class="tpos" data-id="${id}"${p ? ` title="${p.label}"` : ''}>${p ? p.code : ''}</span>`;
+};
+
+async function fetchPositions(list) {
+  const ids = list.map((c) => c.id).filter((id) => typeof id === 'number' && !positionCache.has(id));
+  const chunk = (arr) => { const out = []; for (let i = 0; i < arr.length; i += 50) out.push(arr.slice(i, i + 50)); return out; };
+  const qidToPage = new Map();
+  for (const part of chunk(ids)) {
+    const wp = await apiGet('https://en.wikipedia.org/w/api.php', { action: 'query', pageids: part.join('|'), prop: 'pageprops', ppprop: 'wikibase_item', formatversion: '2' });
+    for (const p of wp.query?.pages || []) if (p.pageprops?.wikibase_item) qidToPage.set(p.pageprops.wikibase_item, p.pageid);
+  }
+  const firstPos = new Map(); // pageid -> positie-qid
+  for (const part of chunk([...qidToPage.keys()])) {
+    const ents = (await apiGet('https://www.wikidata.org/w/api.php', { action: 'wbgetentities', ids: part.join('|'), props: 'claims' })).entities;
+    for (const [qid, e] of Object.entries(ents)) {
+      const claims = e.claims?.P413 || [];
+      const c = claims.find((x) => x.rank === 'preferred') || claims[0];
+      if (c && claimId(c)) firstPos.set(qidToPage.get(qid), claimId(c));
+    }
+  }
+  const labels = {};
+  for (const part of chunk([...new Set(firstPos.values())])) {
+    const ents = (await apiGet('https://www.wikidata.org/w/api.php', { action: 'wbgetentities', ids: part.join('|'), props: 'labels', languages: 'en' })).entities;
+    for (const [qid, e] of Object.entries(ents)) labels[qid] = e.labels?.en?.value || '';
+  }
+  for (const id of ids) {
+    const label = labels[firstPos.get(id)] || '';
+    const hit = POSITIONS.find(([re]) => re.test(label));
+    positionCache.set(id, hit ? { code: hit[1], label: hit[2] } : null);
+  }
+}
+
+function fillPositions() {
+  for (const el of document.querySelectorAll('.tpos[data-id]')) {
+    const p = positionCache.get(Number(el.dataset.id));
+    if (p) { el.textContent = p.code; el.title = p.label; }
+  }
+}
+
 let lastUsedKey = '';
 
 function renderCandidates() {
@@ -529,7 +587,7 @@ function renderCandidates() {
     return `<button type="button" class="tile cand${round ? ' used' : ''}" data-i="${i}" title="${esc(c.title)}${c.description ? ' · ' + esc(c.description) : ''}"${round ? ' aria-disabled="true"' : ''}>
       <span class="tphoto">${photo(c)}${round ? `<span class="tnote">R${round}</span>` : ''}</span>
       <span class="tname">${esc(c.title)}</span>
-      ${born ? `<span class="tyear">${born}</span>` : ''}
+      <span class="tline">${born ? `<span class="tyear">${born}</span>` : ''}${posTag(c.id)}</span>
     </button>`;
   }).join('');
 }
@@ -549,6 +607,7 @@ $('searchForm').addEventListener('submit', async (e) => {
   try {
     const { context, results } = await searchPlayers(q);
     candidates = results;
+    fetchPositions(results).then(fillPositions).catch(() => {});
     if (context) {
       $('searchContext').textContent = results.length ? `${context} · ${results.length} spelers` : `Geen spelers gevonden voor ${context}.`;
       $('searchContext').hidden = false;
@@ -685,7 +744,7 @@ function render() {
   $('historyList').innerHTML = past.slice().reverse().map((h) => `
     <div class="hround">
       <span class="lbl">Ronde ${h.round}${h.match ? '<span class="pill ok">Match</span>' : ''}</span>
-      <div class="hpicks">${h.picks.map((p) => `<span class="hpick">${p.image ? `<img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">` : '<span class="ph"></span>'}<span>${esc(p.title)} <small>${esc(p.player)}</small></span></span>`).join('')}</div>
+      <div class="hpicks">${h.picks.map((p) => `<span class="hpick">${p.image ? `<img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">` : '<span class="ph"></span>'}<span class="htext"><span class="hname">${esc(p.title)} <small>${esc(p.player)}</small></span>${badges(p)}</span></span>`).join('')}</div>
     </div>`).join('');
 }
 
