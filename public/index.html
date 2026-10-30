@@ -384,7 +384,10 @@ async function nameSearch(q) {
   if (results.length < 3) {
     for (const r of await wikiSearch(`${quoted} ${infobox}`, false)) if (!results.some((x) => x.id === r.id)) results.push(r);
   }
-  return photosFirst(await markWomen(results)).slice(0, 20);
+  // Hooguit één speelster in de resultaten (de meest relevante); kiezen geeft de GEEN VROUWEN-melding
+  let womanShown = false;
+  const limited = (await markWomen(results)).filter((r) => !r.woman || (!womanShown && (womanShown = true)));
+  return photosFirst(limited).slice(0, 20);
 }
 
 // Speelsters blijven vindbaar, maar worden gemarkeerd: kiezen kan niet (geslacht = vrouw in Wikidata)
