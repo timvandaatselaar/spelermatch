@@ -151,6 +151,12 @@ input[type="text"]:focus { outline: none; background: #1A5241; }
 .bar-inner { max-width: 560px; margin: 0 auto; display: grid; gap: 6px; }
 .bar-note { margin: 0; text-align: center; font-size: 12px; color: var(--muted); }
 
+/* Melding bij het kiezen van een speelster */
+.nowomen { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 24px; text-align: center;
+  background: #D7263D; color: #FFFFFF; font: 900 clamp(64px, 22vw, 180px)/0.9 var(--display); letter-spacing: 0.01em; cursor: pointer; animation: shake 0.4s ease-out; }
+@keyframes shake { 0%, 100% { transform: none; } 20% { transform: translateX(-12px); } 40% { transform: translateX(12px); } 60% { transform: translateX(-8px); } 80% { transform: translateX(8px); } }
+@media (prefers-reduced-motion: reduce) { .nowomen { animation: none; } }
+
 /* Aftellen: de middencirkel */
 .countdown { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; align-content: center; gap: 4px;
   background: repeating-linear-gradient(180deg, var(--bg) 0 70px, var(--stripe) 70px 140px), var(--bg); }
@@ -284,6 +290,8 @@ footer a { color: inherit; }
   </div>
 </div>
 
+<div class="nowomen" id="noWomen" hidden role="alert">GEEN VROUWEN</div>
+
 <div class="countdown" id="countdown" hidden>
   <p class="cround" id="countRound">Ronde 1</p>
   <span id="countNum">3</span>
@@ -376,22 +384,28 @@ async function nameSearch(q) {
   if (results.length < 3) {
     for (const r of await wikiSearch(`${quoted} ${infobox}`, false)) if (!results.some((x) => x.id === r.id)) results.push(r);
   }
-  return photosFirst(await withoutWomen(results)).slice(0, 20);
+  return photosFirst(await markWomen(results)).slice(0, 20);
 }
 
-// Alleen mannelijke spelers: haal speelsters eruit via Wikidata (geslacht = vrouw)
-async function withoutWomen(results) {
-  const byDescription = results.filter((r) => !/\b(women|woman|female)\b/i.test(r.description));
-  const qids = byDescription.map((r) => r.qid).filter(Boolean);
-  if (!qids.length) return byDescription;
+// Speelsters blijven vindbaar, maar worden gemarkeerd: kiezen kan niet (geslacht = vrouw in Wikidata)
+async function markWomen(results) {
+  for (const r of results) if (/\b(women|woman|female)\b/i.test(r.description)) r.woman = true;
+  const qids = results.map((r) => r.qid).filter(Boolean);
+  if (!qids.length) return results;
   try {
     const sparql = `SELECT ?p WHERE { VALUES ?p { ${qids.map((q) => 'wd:' + q).join(' ')} } ?p wdt:P21 ?g . FILTER(?g IN (wd:Q6581072, wd:Q1052281)) }`;
     const res = await fetch('https://query.wikidata.org/sparql?' + new URLSearchParams({ query: sparql, format: 'json' }));
     const women = new Set((await res.json()).results.bindings.map((b) => b.p.value.split('/').pop()));
-    return byDescription.filter((r) => !women.has(r.qid));
-  } catch {
-    return byDescription;
-  }
+    for (const r of results) if (women.has(r.qid)) r.woman = true;
+  } catch {}
+  return results;
+}
+
+let noWomenTimer = null;
+function showNoWomen() {
+  $('noWomen').hidden = false;
+  clearTimeout(noWomenTimer);
+  noWomenTimer = setTimeout(() => { $('noWomen').hidden = true; }, 2500);
 }
 
 // Club of land opzoeken in Wikidata. Een land wordt het nationale elftal van dat land.
@@ -619,6 +633,7 @@ function usedInRound(pick) {
 
 // Kiezen gaat direct; vlag en clubs worden daarna opgehaald en nagestuurd.
 async function choose(pick) {
+  if (pick.woman) { showNoWomen(); return; }
   const round = usedInRound(pick);
   if (round) {
     $('searchError').textContent = `${pick.title} is al genoemd in ronde ${round}. Kies een andere speler.`;
@@ -639,6 +654,7 @@ async function choose(pick) {
 }
 
 $('changeBtn').addEventListener('click', () => post('unpick'));
+$('noWomen').addEventListener('click', () => { $('noWomen').hidden = true; });
 $('revealBtn').addEventListener('click', () => { $('revealBtn').disabled = true; post('reveal'); });
 $('nextBtn').addEventListener('click', () => { window.scrollTo({ top: 0 }); post('next'); });
 
