@@ -7,6 +7,9 @@ const path = require('path');
 const PORT = process.env.PORT || 3000;
 const COUNTDOWN_MS = 3000;
 const OFFLINE_GRACE_MS = 60_000;
+const LAST_CALL_MS = 60_000;
+const SCORES_FILE = path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'highscores.json');
+const GIST_NAME = 'spelermatch-highscores.json';
 const INDEX_HTML = fs.readFileSync(path.join(__dirname, 'public', 'index.html'));
 
 // --- Spelstatus ---------------------------------------------------------------
@@ -15,15 +18,111 @@ const players = new Map(); // key -> { name, conns: Set<res>, lastSeen }
 let game = newGame();
 
 function newGame() {
-  return { round: 1, phase: 'collect', picks: {}, revealAt: null, history: [] };
+  return { round: 1, phase: 'collect', picks: {}, revealAt: null, history: [], skipped: new Set(), lastCall: null };
 }
 
 const keyOf = (name) => String(name || '').trim().toLowerCase();
 const onlinePlayers = () => [...players.entries()].filter(([, p]) => p.conns.size > 0);
 
+// Wie de laatste minuut liet verstrijken, telt deze ronde niet meer mee.
 function allSubmitted() {
   const online = onlinePlayers();
-  return online.length > 0 && online.every(([k]) => game.picks[k]);
+  return online.some(([k]) => game.picks[k]) && online.every(([k]) => game.picks[k] || game.skipped.has(k));
+}
+
+// --- Laatste minuut -----------------------------------------------------------
+// Moet er nog maar één speler kiezen, dan krijgt die 60 seconden. Daarna wordt die overgeslagen.
+
+let lastCallTimer = null;
+
+function updateLastCall() {
+  const online = onlinePlayers();
+  const missing = online.filter(([k]) => !game.picks[k] && !game.skipped.has(k)).map(([k]) => k);
+  const due = game.phase === 'collect' && online.length >= 2 && missing.length === 1;
+  if (!due) {
+    clearTimeout(lastCallTimer);
+    game.lastCall = null;
+    return;
+  }
+  if (game.lastCall?.key === missing[0]) return;
+  clearTimeout(lastCallTimer);
+  const lastCall = { key: missing[0], endsAt: Date.now() + LAST_CALL_MS };
+  game.lastCall = lastCall;
+  lastCallTimer = setTimeout(() => {
+    if (game.lastCall !== lastCall || game.picks[lastCall.key]) return;
+    game.skipped.add(lastCall.key);
+    game.lastCall = null;
+    broadcast();
+  }, LAST_CALL_MS);
+}
+
+// --- Highscores ---------------------------------------------------------------
+// Iedereen die hetzelfde antwoord heeft als minstens één ander, krijgt een punt.
+// Bewaard in een bestand en, als GITHUB_TOKEN is ingesteld, in een privé-gist: gratis hosting wist bestanden bij elke deploy.
+
+let scores = {}; // key -> { name, points }
+
+function awardPoints(picks) {
+  const byPick = new Map();
+  for (const p of picks) byPick.set(p.id, [...(byPick.get(p.id) || []), p.player]);
+  let changed = false;
+  for (const names of byPick.values()) {
+    if (names.length < 2) continue;
+    for (const name of names) {
+      const k = keyOf(name);
+      scores[k] = { name, points: (scores[k]?.points || 0) + 1 };
+      changed = true;
+    }
+  }
+  if (changed) saveScores();
+}
+
+const topScores = () => Object.values(scores).sort((a, b) => b.points - a.points || a.name.localeCompare(b.name)).slice(0, 50);
+
+const gist = { id: null };
+async function github(pathname, options = {}) {
+  const res = await fetch('https://api.github.com' + pathname, {
+    ...options,
+    headers: { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'spelermatch', ...options.headers },
+  });
+  if (!res.ok) throw new Error(`GitHub ${res.status}`);
+  return res.json();
+}
+
+async function loadScores() {
+  try { scores = JSON.parse(fs.readFileSync(SCORES_FILE, 'utf8')); } catch {}
+  if (!process.env.GITHUB_TOKEN) return;
+  try {
+    const list = await github('/gists?per_page=100');
+    const found = list.find((g) => g.files[GIST_NAME]);
+    if (found) {
+      gist.id = found.id;
+      const full = await github('/gists/' + found.id);
+      scores = { ...scores, ...JSON.parse(full.files[GIST_NAME].content || '{}') };
+    } else {
+      const created = await github('/gists', { method: 'POST', body: JSON.stringify({ description: 'Spelermatch highscores', public: false, files: { [GIST_NAME]: { content: JSON.stringify(scores) } } }) });
+      gist.id = created.id;
+    }
+    console.log('Highscores geladen uit gist ' + gist.id);
+  } catch (err) {
+    console.error('Highscores uit gist laden mislukt:', err.message);
+  }
+}
+
+let saveTimer = null;
+function saveScores() {
+  try {
+    fs.mkdirSync(path.dirname(SCORES_FILE), { recursive: true });
+    fs.writeFileSync(SCORES_FILE, JSON.stringify(scores));
+  } catch (err) {
+    console.error('Highscores opslaan mislukt:', err.message);
+  }
+  if (!gist.id) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    github('/gists/' + gist.id, { method: 'PATCH', body: JSON.stringify({ files: { [GIST_NAME]: { content: JSON.stringify(scores) } } }) })
+      .catch((err) => console.error('Highscores naar gist schrijven mislukt:', err.message));
+  }, 2000);
 }
 
 function isMatch(picks) {
@@ -45,6 +144,9 @@ function stateFor(viewerKey) {
     phase: game.phase,
     revealInMs: game.revealAt ? Math.max(0, game.revealAt - Date.now()) : null,
     allSubmitted: allSubmitted(),
+    lastCall: game.lastCall ? { name: players.get(game.lastCall.key)?.name || game.lastCall.key, you: game.lastCall.key === viewerKey, inMs: Math.max(0, game.lastCall.endsAt - Date.now()) } : null,
+    skipped: [...game.skipped].map((k) => players.get(k)?.name || k),
+    scores: topScores(),
     players: [...players.entries()]
       .filter(([k]) => online.has(k) || game.picks[k])
       .map(([k, p]) => ({ name: p.name, online: online.has(k), submitted: !!game.picks[k], you: k === viewerKey })),
@@ -56,6 +158,7 @@ function stateFor(viewerKey) {
 }
 
 function broadcast() {
+  updateLastCall();
   for (const [key, p] of players) {
     const data = `data: ${JSON.stringify(stateFor(key))}\n\n`;
     for (const res of p.conns) res.write(data);
@@ -71,6 +174,7 @@ function startCountdown() {
     game.revealAt = null;
     const picks = revealedPicks();
     game.history.push({ round: game.round, picks, match: isMatch(picks) });
+    awardPoints(picks);
     broadcast();
   }, COUNTDOWN_MS);
 }
@@ -187,6 +291,7 @@ const server = http.createServer(async (req, res) => {
         game.round += 1;
         game.phase = 'collect';
         game.picks = {};
+        game.skipped = new Set();
       }
     } else if (action === 'ping') {
       // Houdt gratis hosting (Render) wakker zolang er iemand speelt.
@@ -203,4 +308,4 @@ const server = http.createServer(async (req, res) => {
   sendJson(res, 404, { error: 'Niet gevonden.' });
 });
 
-server.listen(PORT, () => console.log(`Spelermatch draait op http://localhost:${PORT}`));
+loadScores().finally(() => server.listen(PORT, () => console.log(`Spelermatch draait op http://localhost:${PORT}`)));

@@ -192,6 +192,29 @@ input[type="text"]:focus { outline: none; background: #1A5241; }
 .hround.latest .hpick .badges .club { width: 18px; height: 18px; padding: 2px; border-radius: 4px; }
 .hround:not(.latest) .hpick { opacity: 0.75; }
 
+/* Laatste minuut */
+.lastcall { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--panel); display: grid; gap: 9px; }
+.lastcall .lc-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; }
+.lastcall .lc-time { font-weight: 600; font-variant-numeric: tabular-nums; }
+.lastcall .lc-track { height: 4px; border-radius: 2px; background: var(--soft); overflow: hidden; }
+.lastcall .lc-fill { height: 100%; background: var(--lime); border-radius: 2px; transform-origin: left; }
+.lastcall.urgent .lc-time { color: var(--lime); }
+
+/* Punt op de uitslag */
+.tcard .pt { position: absolute; z-index: 1; right: 6px; top: 6px; padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--lime); color: var(--lime-ink); }
+
+/* Highscores */
+.sheet { position: fixed; inset: 0; z-index: 25; background: var(--bg); overflow-y: auto;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(32px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.sheet .wrap { gap: 20px; }
+.scores { list-style: none; margin: 0; padding: 0; }
+.scores li { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; padding: 11px 0; font-size: 15px; }
+.scores li + li { border-top: 1px solid var(--soft); }
+.scores .rank { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.scores .pts { font-weight: 600; font-variant-numeric: tabular-nums; }
+.scores li.you .who { font-weight: 600; }
+.scores li:first-child .pts { color: var(--lime); }
+
 footer { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; padding-top: 8px; opacity: 0.8; }
 footer a { color: inherit; }
 
@@ -228,6 +251,10 @@ footer a { color: inherit; }
   <section>
     <div class="label-row"><p class="label">Spelers</p><span class="label" id="playerMeta"></span></div>
     <ul class="players" id="playerList"></ul>
+    <div class="lastcall" id="lastCall" hidden>
+      <div class="lc-row"><span id="lastCallText"></span><span class="lc-time" id="lastCallTime"></span></div>
+      <div class="lc-track"><div class="lc-fill" id="lastCallFill"></div></div>
+    </div>
   </section>
 
   <section id="pickSection">
@@ -274,7 +301,7 @@ footer a { color: inherit; }
 
   <footer>
     <span>Ingelogd als <span id="meName"></span> · <a href="#" id="logoutLink">andere naam</a></span>
-    <button class="btn text" type="button" id="resetBtn">Nieuw spel</button>
+    <span><button class="btn text" type="button" id="scoresBtn">Highscores</button> · <button class="btn text" type="button" id="resetBtn">Nieuw spel</button></span>
   </footer>
 </main>
 
@@ -292,6 +319,14 @@ footer a { color: inherit; }
 
 <div class="nowomen" id="noWomen" hidden role="alert">GEEN VROUWEN</div>
 
+<div class="sheet" id="scoresSheet" hidden role="dialog" aria-labelledby="scoresTitle">
+  <div class="wrap">
+    <header class="top"><h2 class="title" id="scoresTitle">Highscores</h2><button class="btn small" type="button" id="scoresClose">Sluit</button></header>
+    <p class="sub" style="margin:0">Heb je hetzelfde antwoord als minstens één ander, dan krijg je een punt.</p>
+    <ul class="scores" id="scoresList"></ul>
+  </div>
+</div>
+
 <div class="countdown" id="countdown" hidden>
   <p class="cround" id="countRound">Ronde 1</p>
   <span id="countNum">3</span>
@@ -305,6 +340,7 @@ let state = null;
 let source = null;
 let lastQuery = '';
 let countdownTimer = null;
+let lastCallTimer = null;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initials = (t) => esc(String(t).replace(/\(.*?\)/g, '').split(/\s+/).filter((w) => /^\p{L}/u.test(w)).map((w) => w[0]).join('').slice(0, 2).toUpperCase());
@@ -698,7 +734,7 @@ function render() {
   lastRound = roundKey;
   $('roundLabel').textContent = 'Ronde ' + s.round;
 
-  const active = s.players.filter((p) => p.online);
+  const active = s.players.filter((p) => p.online && !(collecting && s.skipped.includes(p.name)));
   const ready = active.filter((p) => p.submitted).length;
   $('playerMeta').textContent = collecting ? `${ready}/${active.length} klaar` : `${s.players.length} spelers`;
   $('playerList').innerHTML = s.players.map((p) => {
@@ -706,12 +742,30 @@ function render() {
     return `<li class="${p.online ? '' : 'off'} ${p.you ? 'you' : ''}" title="${esc(p.name)}"><span class="avatar">${initials(p.name)}${st}</span><span class="name">${p.you ? 'Jij' : esc(p.name)}</span></li>`;
   }).join('');
 
+  // Laatste minuut voor de laatste speler, voor iedereen zichtbaar
+  clearInterval(lastCallTimer);
+  $('lastCall').hidden = !(collecting && s.lastCall);
+  if (collecting && s.lastCall) {
+    const end = Date.now() + s.lastCall.inMs;
+    $('lastCallText').textContent = s.lastCall.you ? 'Jij bent de laatste, kies snel' : `${s.lastCall.name} moet nog kiezen`;
+    $('lastCall').classList.toggle('urgent', s.lastCall.you);
+    const tick = () => {
+      const left = Math.max(0, end - Date.now());
+      const sec = Math.ceil(left / 1000);
+      $('lastCallTime').textContent = `0:${String(sec).padStart(2, '0')}`.replace('0:60', '1:00');
+      $('lastCallFill').style.transform = `scaleX(${left / 60000})`;
+    };
+    tick();
+    lastCallTimer = setInterval(tick, 250);
+  }
+  const skipped = collecting ? s.skipped : [];
+
   $('pickSection').hidden = !collecting || !!s.myPick;
   $('mySection').hidden = !collecting || !s.myPick;
   if (s.myPick) {
     $('myThumb').innerHTML = photo(s.myPick);
     $('myName').textContent = s.myPick.title;
-    const waiting = s.players.filter((p) => p.online && !p.submitted).map((p) => p.name);
+    const waiting = s.players.filter((p) => p.online && !p.submitted && !skipped.includes(p.name)).map((p) => p.name);
     $('waitStatus').textContent = waiting.length ? 'Wachten op ' + waiting.join(', ') : 'Klaar om te tonen';
     $('mySub').textContent = waiting.length ? 'De anderen zien je keuze pas bij het tonen.' : 'Iedereen heeft gekozen.';
   }
@@ -725,6 +779,7 @@ function render() {
   $('revealBar').hidden = !showReveal;
   $('nextBar').hidden = !showNext;
   $('revealBtn').disabled = false;
+  $('revealBar').querySelector('.bar-note').textContent = skipped.length ? `Tijd voorbij voor ${skipped.join(', ')}` : 'Iedereen heeft gekozen';
   document.body.classList.toggle('has-bar', showReveal || showNext);
 
   // Aftellen
@@ -749,13 +804,16 @@ function render() {
     $('revealSub').textContent = s.match
       ? `In ronde ${s.round} kwamen jullie allemaal uit op ${s.reveal[0].title}.`
       : 'Zoek het verband en kies opnieuw.';
+    const same = (p) => s.reveal.filter((q) => q.id === p.id).length > 1;
     $('revealGrid').innerHTML = s.reveal.map((p) => `<div class="tcard${s.match ? ' match' : ''}">
       ${photo(p)}
-      <span class="chip">${p.player === me ? 'Jij' : esc(p.player)}</span>
+      <span class="chip">${p.player === me ? 'Jij' : esc(p.player)}</span>${same(p) ? '<span class="pt" title="Zelfde antwoord als een ander">+1</span>' : ''}
       <div class="bottom"><div class="pname">${esc(p.title)}</div>${badges(p, 3)}</div>
     </div>`).join('');
     $('nextBtn').textContent = s.match ? 'Opnieuw beginnen' : 'Volgende ronde';
   }
+
+  if (!$('scoresSheet').hidden) renderScores();
 
   // Eerdere rondes, nieuwste eerst (de ronde die nu getoond wordt staat er nog niet in)
   const past = s.phase === 'reveal' ? s.history.slice(0, -1) : s.history;
@@ -766,6 +824,17 @@ function render() {
       <div class="hpicks">${h.picks.map((p) => `<span class="hpick">${p.image ? `<img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">` : '<span class="ph"></span>'}<span class="htext"><span class="hname">${esc(p.title)} <small>${esc(p.player)}</small></span>${badges(p)}</span></span>`).join('')}</div>
     </div>`).join('');
 }
+
+// --- Highscores ---
+function renderScores() {
+  const list = state?.scores || [];
+  $('scoresList').innerHTML = list.length
+    ? list.map((r, i) => `<li class="${r.name.toLowerCase() === me.toLowerCase() ? 'you' : ''}"><span class="rank">${i + 1}</span><span class="who">${esc(r.name)}</span><span class="pts">${r.points}</span></li>`).join('')
+    : '<li><span></span><span class="who" style="color:var(--muted)">Nog geen punten</span><span></span></li>';
+}
+$('scoresBtn').addEventListener('click', () => { renderScores(); $('scoresSheet').hidden = false; });
+$('scoresClose').addEventListener('click', () => { $('scoresSheet').hidden = true; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('scoresSheet').hidden = true; });
 
 // Houd de server wakker zolang dit scherm open staat (gratis hosting slaapt na 15 minuten zonder verkeer)
 setInterval(() => { if (me && !document.hidden) post('ping'); }, 4 * 60 * 1000);
