@@ -377,7 +377,23 @@ function join(name) {
 function connect() {
   if (source) source.close();
   source = new EventSource('/events?name=' + encodeURIComponent(me));
-  source.onmessage = (e) => { state = JSON.parse(e.data); render(); };
+  let restored = false;
+  // Ook bij automatisch herverbinden (bijvoorbeeld na een herstart van de server) opnieuw terugzetten
+  source.onopen = () => { restored = false; };
+  source.onmessage = (e) => {
+    state = JSON.parse(e.data);
+    // Bewaar de ondertekende highscores; na een herstart van de server zet de eerste browser ze terug
+    try {
+      if (!restored) {
+        restored = true;
+        const copy = JSON.parse(localStorage.getItem('spelermatch-scores') || 'null');
+        // Eerst terugzetten, dan pas overschrijven: de server stuurt daarna de samengevoegde stand
+        if (copy && copy.data !== state.scoresBackup?.data) { post('restore', { backup: copy }); return render(); }
+      }
+      if (state.scoresBackup) localStorage.setItem('spelermatch-scores', JSON.stringify(state.scoresBackup));
+    } catch {}
+    render();
+  };
 }
 
 $('joinForm').addEventListener('submit', (e) => { e.preventDefault(); join($('nameInput').value); });

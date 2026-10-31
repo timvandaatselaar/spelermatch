@@ -3,13 +3,13 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
 const COUNTDOWN_MS = 3000;
 const OFFLINE_GRACE_MS = 60_000;
 const LAST_CALL_MS = 60_000;
 const SCORES_FILE = path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'highscores.json');
-const GIST_NAME = 'spelermatch-highscores.json';
 const INDEX_HTML = fs.readFileSync(path.join(__dirname, 'public', 'index.html'));
 
 // --- Spelstatus ---------------------------------------------------------------
@@ -58,9 +58,13 @@ function updateLastCall() {
 
 // --- Highscores ---------------------------------------------------------------
 // Iedereen die hetzelfde antwoord heeft als minstens één ander, krijgt een punt.
-// Bewaard in een bestand en, als GITHUB_TOKEN is ingesteld, in een privé-gist: gratis hosting wist bestanden bij elke deploy.
+// Gratis hosting wist bestanden bij een deploy of herstart. Daarom bewaart elke browser een
+// ondertekende kopie; na een herstart zet de eerste speler die terugkomt de stand terug.
 
 let scores = {}; // key -> { name, points }
+let backup = null; // { data, sig } zoals de browsers hem bewaren
+const SECRET = process.env.SCORES_SECRET || process.env.RENDER_SERVICE_ID || 'spelermatch-lokaal';
+const sign = (data) => crypto.createHmac('sha256', SECRET).update(data).digest('hex');
 
 function awardPoints(picks) {
   const byPick = new Map();
@@ -79,50 +83,37 @@ function awardPoints(picks) {
 
 const topScores = () => Object.values(scores).sort((a, b) => b.points - a.points || a.name.localeCompare(b.name)).slice(0, 50);
 
-const gist = { id: null };
-async function github(pathname, options = {}) {
-  const res = await fetch('https://api.github.com' + pathname, {
-    ...options,
-    headers: { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'spelermatch', ...options.headers },
-  });
-  if (!res.ok) throw new Error(`GitHub ${res.status}`);
-  return res.json();
-}
-
-async function loadScores() {
+function loadScores() {
   try { scores = JSON.parse(fs.readFileSync(SCORES_FILE, 'utf8')); } catch {}
-  if (!process.env.GITHUB_TOKEN) return;
-  try {
-    const list = await github('/gists?per_page=100');
-    const found = list.find((g) => g.files[GIST_NAME]);
-    if (found) {
-      gist.id = found.id;
-      const full = await github('/gists/' + found.id);
-      scores = { ...scores, ...JSON.parse(full.files[GIST_NAME].content || '{}') };
-    } else {
-      const created = await github('/gists', { method: 'POST', body: JSON.stringify({ description: 'Spelermatch highscores', public: false, files: { [GIST_NAME]: { content: JSON.stringify(scores) } } }) });
-      gist.id = created.id;
-    }
-    console.log('Highscores geladen uit gist ' + gist.id);
-  } catch (err) {
-    console.error('Highscores uit gist laden mislukt:', err.message);
-  }
+  const data = JSON.stringify(scores);
+  backup = { data, sig: sign(data) };
 }
 
-let saveTimer = null;
 function saveScores() {
+  const data = JSON.stringify(scores);
+  backup = { data, sig: sign(data) };
   try {
     fs.mkdirSync(path.dirname(SCORES_FILE), { recursive: true });
-    fs.writeFileSync(SCORES_FILE, JSON.stringify(scores));
+    fs.writeFileSync(SCORES_FILE, data);
   } catch (err) {
     console.error('Highscores opslaan mislukt:', err.message);
   }
-  if (!gist.id) return;
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    github('/gists/' + gist.id, { method: 'PATCH', body: JSON.stringify({ files: { [GIST_NAME]: { content: JSON.stringify(scores) } } }) })
-      .catch((err) => console.error('Highscores naar gist schrijven mislukt:', err.message));
-  }, 2000);
+}
+
+// Kopie uit een browser terugzetten: alleen met een geldige handtekening, per speler de hoogste stand.
+function restoreScores(copy) {
+  if (!copy || typeof copy.data !== 'string' || typeof copy.sig !== 'string' || copy.data.length > 50_000) return false;
+  const expected = sign(copy.data);
+  if (copy.sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(copy.sig), Buffer.from(expected))) return false;
+  let changed = false;
+  for (const [k, v] of Object.entries(JSON.parse(copy.data))) {
+    if (v && typeof v.name === 'string' && Number.isInteger(v.points) && v.points > (scores[k]?.points || 0)) {
+      scores[k] = { name: v.name.slice(0, 24), points: v.points };
+      changed = true;
+    }
+  }
+  if (changed) saveScores();
+  return changed;
 }
 
 function isMatch(picks) {
@@ -147,6 +138,7 @@ function stateFor(viewerKey) {
     lastCall: game.lastCall ? { name: players.get(game.lastCall.key)?.name || game.lastCall.key, you: game.lastCall.key === viewerKey, inMs: Math.max(0, game.lastCall.endsAt - Date.now()) } : null,
     skipped: [...game.skipped].map((k) => players.get(k)?.name || k),
     scores: topScores(),
+    scoresBackup: backup,
     players: [...players.entries()]
       .filter(([k]) => online.has(k) || game.picks[k])
       .map(([k, p]) => ({ name: p.name, online: online.has(k), submitted: !!game.picks[k], you: k === viewerKey })),
@@ -293,6 +285,8 @@ const server = http.createServer(async (req, res) => {
         game.picks = {};
         game.skipped = new Set();
       }
+    } else if (action === 'restore') {
+      if (!restoreScores(body.backup)) return sendJson(res, 200, { ok: true });
     } else if (action === 'ping') {
       // Houdt gratis hosting (Render) wakker zolang er iemand speelt.
       return sendJson(res, 200, { ok: true });
@@ -308,4 +302,5 @@ const server = http.createServer(async (req, res) => {
   sendJson(res, 404, { error: 'Niet gevonden.' });
 });
 
-loadScores().finally(() => server.listen(PORT, () => console.log(`Spelermatch draait op http://localhost:${PORT}`)));
+loadScores();
+server.listen(PORT, () => console.log(`Spelermatch draait op http://localhost:${PORT}`));
